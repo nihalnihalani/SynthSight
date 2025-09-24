@@ -68,7 +68,7 @@ const Disclaimer: React.FC = () => {
           </div>
           <div className="flex items-center space-x-2 text-green-300">
             <Database className="h-5 w-5" />
-            <span className="text-sm font-medium">Firebase</span>
+            <span className="text-sm font-medium">Neo4j</span>
           </div>
           <div className="flex items-center space-x-2 text-purple-300">
             <Brain className="h-5 w-5" />
@@ -157,7 +157,7 @@ const Disclaimer: React.FC = () => {
           <div className="flex items-center space-x-4">
             <span>Created by <strong className="text-white">Lochan Acharya</strong></span>
             <span className="text-white/40">•</span>
-            <span>Built with React, TypeScript, Groq & Firebase</span>
+            <span>Built with React, TypeScript, OpenAI & Neo4j</span>
           </div>
           <div className="flex items-center space-x-2">
             <span>Made with</span>

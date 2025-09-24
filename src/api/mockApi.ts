@@ -1,6 +1,5 @@
 import { LLMInteraction, DashboardStats, AgentSettings, AuditLogEntry, FeedbackEntry } from '../types';
-import { agents } from '../agents';
-import { callGroq } from '../lib/groqAgent';
+import { agents } from "../agents";
 
 class MockApiService {
   private interactions: LLMInteraction[] = [];
@@ -16,8 +15,13 @@ class MockApiService {
   };
 
   async processPrompt(prompt: string): Promise<LLMInteraction> {
-    // Generate LLM response using Groq
-    const llmResult = await callGroq(prompt);
+    // Generate mock LLM response
+    const llmResult = {
+      response: 'This is a mock response for testing purposes.',
+      source: 'mock' as const,
+      model: 'mock-model',
+      error: undefined
+    };
     
     const interaction: LLMInteraction = {
       id: Math.random().toString(36).substr(2, 9),
@@ -167,7 +171,7 @@ class MockApiService {
     agents.feedbackAgent.enabled = newSettings.feedbackAgent.enabled;
   }
 
-  async submitFeedback(interactionId: string, rating: 'positive' | 'negative' | 'flag', comment?: string): Promise<void> {
+  async submitFeedback(interactionId: string, rating: 'positive' | 'negative' | 'report', comment?: string): Promise<void> {
     const feedback: FeedbackEntry = {
       id: Math.random().toString(36).substr(2, 9),
       timestamp: new Date(),
