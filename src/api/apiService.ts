@@ -13,9 +13,15 @@ export class ApiService {
   constructor() {
     this.useNeo4j = graphNeo4jDatabaseService.isConfigured();
     
+    console.log('🔧 ApiService constructor:', {
+      useNeo4j: this.useNeo4j,
+      neo4jConfigured: graphNeo4jDatabaseService.isConfigured()
+    });
+    
     if (!this.useNeo4j) {
-      console.warn('Neo4j not configured, falling back to mock API');
+      console.warn('⚠️ Neo4j not configured, falling back to mock API');
     } else {
+      console.log('✅ Neo4j configured, initializing schema...');
       // Initialize Neo4j schema
       graphNeo4jDatabaseService.initializeSchema().catch(console.error);
     }
@@ -134,13 +140,21 @@ export class ApiService {
     // Save interaction
     if (this.useNeo4j) {
       try {
+        console.log('🔄 Attempting to save to Neo4j...', { id: interaction.id, input: interaction.input.substring(0, 50) });
         const neo4jId = await graphNeo4jDatabaseService.saveInteraction(interaction);
         interaction.id = neo4jId;
+        console.log('✅ Successfully saved to Neo4j:', neo4jId);
       } catch (error) {
-        console.error('Failed to save to Neo4j, using mock API:', error);
-        // Fallback to mock API
-        return await mockApi.processPrompt(prompt);
+        console.error('❌ Failed to save to Neo4j, using mock API:', error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStack = error instanceof Error ? error.stack : '';
+        console.error('Error details:', errorMessage, errorStack);
+        // Don't fallback to mock API - throw the error so we can see what's wrong
+        throw new Error(`Neo4j save failed: ${errorMessage}`);
       }
+    } else {
+      console.warn('⚠️ Neo4j not configured, using mock API');
+      return await mockApi.processPrompt(prompt);
     }
 
     return interaction;
@@ -169,13 +183,20 @@ export class ApiService {
   async getInteractions(): Promise<LLMInteraction[]> {
     if (this.useNeo4j) {
       try {
-        return await graphNeo4jDatabaseService.getInteractions();
+        console.log('🔄 Fetching interactions from Neo4j...');
+        const interactions = await graphNeo4jDatabaseService.getInteractions();
+        console.log(`✅ Retrieved ${interactions.length} interactions from Neo4j`);
+        return interactions;
       } catch (error) {
-        console.error('Failed to fetch from Neo4j, using mock API:', error);
+        console.error('❌ Failed to fetch from Neo4j, using mock API:', error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error('Error details:', errorMessage);
         return await mockApi.getInteractions();
       }
+    } else {
+      console.warn('⚠️ Neo4j not configured, using mock API for getInteractions');
+      return await mockApi.getInteractions();
     }
-    return await mockApi.getInteractions();
   }
 
   async getDashboardStats(): Promise<DashboardStats> {
