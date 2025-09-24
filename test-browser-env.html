@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Environment Variables</title>
+</head>
+<body>
+    <h1>Environment Variables Test</h1>
+    <div id="results"></div>
+    
+    <script type="module">
+        console.log('🔍 Testing environment variables in browser...');
+        
+        const envVars = {
+            'VITE_NEO4J_URI': import.meta.env.VITE_NEO4J_URI,
+            'VITE_NEO4J_USERNAME': import.meta.env.VITE_NEO4J_USERNAME,
+            'VITE_NEO4J_PASSWORD': import.meta.env.VITE_NEO4J_PASSWORD ? '***HIDDEN***' : undefined,
+            'VITE_NEO4J_DATABASE': import.meta.env.VITE_NEO4J_DATABASE,
+            'VITE_OPENAI_API_KEY': import.meta.env.VITE_OPENAI_API_KEY ? '***HIDDEN***' : undefined,
+            'VITE_GROQ_API_KEY': import.meta.env.VITE_GROQ_API_KEY ? '***HIDDEN***' : undefined,
+            'VITE_PERPLEXITY_API_KEY': import.meta.env.VITE_PERPLEXITY_API_KEY ? '***HIDDEN***' : undefined
+        };
+        
+        console.log('Environment Variables:', envVars);
+        
+        const results = document.getElementById('results');
+        let html = '<h2>Environment Variables Status:</h2><ul>';
+        
+        Object.entries(envVars).forEach(([key, value]) => {
+            const status = value ? '✅' : '❌';
+            html += `<li>${status} ${key}: ${value || 'NOT SET'}</li>`;
+        });
+        
+        html += '</ul>';
+        
+        // Check Neo4j configuration specifically
+        const neo4jConfigured = envVars.VITE_NEO4J_URI && 
+                               envVars.VITE_NEO4J_USERNAME && 
+                               envVars.VITE_NEO4J_PASSWORD && 
+                               envVars.VITE_NEO4J_DATABASE;
+        
+        html += `<h2>Neo4j Configuration: ${neo4jConfigured ? '✅ COMPLETE' : '❌ INCOMPLETE'}</h2>`;
+        
+        if (!neo4jConfigured) {
+            html += '<p style="color: red;"><strong>ISSUE FOUND:</strong> Neo4j environment variables are missing! This is why data is not persisting.</p>';
+            html += '<p><strong>SOLUTION:</strong> Check if .env file exists and restart the development server.</p>';
+        }
+        
+        results.innerHTML = html;
+    </script>
+</body>
+</html>

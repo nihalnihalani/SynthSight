@@ -9,6 +9,7 @@ import Neo4jStatus from '../components/Neo4jStatus';
 import { apiService } from '../api/apiService';
 import EmptyState from '../components/EmptyState';
 import SimpleGraphVisualization from '../components/SimpleGraphVisualization';
+import EnvTest from '../components/EnvTest';
 import { BarChart3 } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
@@ -87,6 +88,8 @@ const Dashboard: React.FC = () => {
         <PerplexityStatus />
         <Neo4jStatus />
       </div>
+
+      <EnvTest />
 
       <SimpleGraphVisualization />
 

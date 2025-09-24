@@ -14,16 +14,23 @@ class Neo4jService {
       const username = import.meta.env.VITE_NEO4J_USERNAME;
       const password = import.meta.env.VITE_NEO4J_PASSWORD;
 
+      console.log('🔧 Neo4j initialization:', {
+        uri: uri ? `${uri.substring(0, 20)}...` : 'NOT SET',
+        username: username || 'NOT SET',
+        password: password ? '***SET***' : 'NOT SET'
+      });
+
       if (!uri || !username || !password) {
-        console.warn('Neo4j configuration incomplete, database operations will be disabled');
+        console.warn('⚠️ Neo4j configuration incomplete, database operations will be disabled');
+        this.isConnected = false;
         return;
       }
 
       this.driver = neo4j.driver(uri, neo4j.auth.basic(username, password));
       this.isConnected = true;
-      console.log('Neo4j driver initialized successfully');
+      console.log('✅ Neo4j driver initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize Neo4j driver:', error);
+      console.error('❌ Failed to initialize Neo4j driver:', error);
       this.isConnected = false;
     }
   }
@@ -51,12 +58,20 @@ class Neo4jService {
   }
 
   isConfigured(): boolean {
-    return !!(
+    const configured = !!(
       import.meta.env.VITE_NEO4J_URI &&
       import.meta.env.VITE_NEO4J_USERNAME &&
       import.meta.env.VITE_NEO4J_PASSWORD &&
       import.meta.env.VITE_NEO4J_DATABASE
     );
+    
+    console.log('🔍 Neo4j isConfigured():', {
+      configured,
+      isConnected: this.isConnected,
+      hasDriver: !!this.driver
+    });
+    
+    return configured && this.isConnected;
   }
 
   async close(): Promise<void> {

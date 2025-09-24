@@ -5,7 +5,6 @@ import { apiService } from '../api/apiService';
 import { AgentSettings } from '../types';
 import PerplexityStatus from '../components/PerplexityStatus';
 import Neo4jStatus from '../components/Neo4jStatus';
-import GroqStatus from '../components/GroqStatus';
 import OpenAIStatus from '../components/OpenAIStatus';
 import { useToast } from '../hooks/useToast';
 
@@ -155,7 +154,6 @@ const Settings: React.FC = () => {
         {/* API Status */}
         <div className="lg:col-span-2 space-y-4">
           <OpenAIStatus />
-          <GroqStatus />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <PerplexityStatus />
             <Neo4jStatus />

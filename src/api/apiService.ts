@@ -4,7 +4,6 @@ import { graphNeo4jDatabaseService } from '../services/graphNeo4jService';
 import { mockApi } from './mockApi';
 import { rateLimiter } from '../utils/rateLimiter';
 import { InputSanitizer } from '../utils/inputSanitizer';
-import { callGroq } from '../lib/groqAgent';
 import { callOpenAI, isOpenAIConfigured } from '../lib/openaiAgent';
 
 export class ApiService {
@@ -51,17 +50,18 @@ export class ApiService {
 
     const sanitizedPrompt = validation.sanitized!;
 
-    // Generate LLM response using OpenAI (primary) or Groq (fallback)
+    // Generate LLM response using OpenAI
     let llmResult;
     if (isOpenAIConfigured()) {
       llmResult = await callOpenAI(sanitizedPrompt);
-      // If OpenAI fails, fallback to Groq
-      if (llmResult.source === 'fallback') {
-        console.log('OpenAI failed, trying Groq as fallback...');
-        llmResult = await callGroq(sanitizedPrompt);
-      }
     } else {
-      llmResult = await callGroq(sanitizedPrompt);
+      // If OpenAI is not configured, use a simple mock response
+      llmResult = {
+        response: 'I cannot provide a response as the AI service is not properly configured.',
+        source: 'mock',
+        model: 'mock-model',
+        error: 'OpenAI API not configured'
+      };
     }
     
     const interaction: LLMInteraction = {
@@ -73,7 +73,7 @@ export class ApiService {
       severity: 'low',
       violations: [],
       agentActions: [],
-      llmSource: llmResult.source,
+      llmSource: llmResult.source as 'openai' | 'mock' | 'fallback',
       llmModel: llmResult.model,
       llmError: llmResult.error
     };
