@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Database, Download, FileText, RefreshCw, Settings, Play, Pause, Square, BarChart3, CheckCircle, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Database, Download, FileText, RefreshCw, Settings, Play, Pause, Square, BarChart3, CheckCircle, AlertTriangle, TrendingUp, Upload } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from '../components/Toast';
+import DocumentUpload from '../components/DocumentUpload';
+import { DocumentUpload as DocumentUploadType, AnalysisType } from '../types';
 
 const DataGeneration: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
+  const [inputMode, setInputMode] = useState<'text' | 'metadata' | 'enterprise'>('text');
   const [generatedFiles, setGeneratedFiles] = useState<Array<{
     id: string;
     name: string;
@@ -93,6 +96,52 @@ const DataGeneration: React.FC = () => {
     toast.success('File Deleted', 'Generated file removed');
   };
 
+  const handleDocumentSubmit = async (document: DocumentUploadType, analysisType: AnalysisType) => {
+    setIsGenerating(true);
+    setGenerationProgress(0);
+    
+    try {
+      // Show processing toast
+      toast.info('Processing Document', 'Extracting content and generating data...');
+      
+      const newFile = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: `${document.fileName}_generated_${new Date().toISOString().split('T')[0]}.${generationSettings.dataFormat}`,
+        type: generationSettings.dataFormat.toUpperCase(),
+        size: '0 KB',
+        timestamp: new Date(),
+        status: 'generating' as const
+      };
+      
+      setGeneratedFiles(prev => [newFile, ...prev]);
+      
+      // Simulate generation progress
+      const interval = setInterval(() => {
+        setGenerationProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            setIsGenerating(false);
+            setGeneratedFiles(prevFiles => 
+              prevFiles.map(file => 
+                file.id === newFile.id 
+                  ? { ...file, status: 'completed', size: `${Math.floor(Math.random() * 500) + 100} KB` }
+                  : file
+              )
+            );
+            toast.success('Generation Complete', 'Data file generated from document successfully');
+            return 100;
+          }
+          return prev + Math.random() * 10;
+        });
+      }, 200);
+      
+    } catch (error) {
+      console.error('Error processing document:', error);
+      toast.error('Processing Failed', error instanceof Error ? error.message : 'Unknown error');
+      setIsGenerating(false);
+    }
+  };
+
 
   return (
     <motion.div
@@ -103,6 +152,49 @@ const DataGeneration: React.FC = () => {
       <div className="flex items-center justify-between border-b border-gray-200 pb-6">
         <h1 className="text-2xl font-semibold text-black">Data Generation</h1>
         <div className="flex items-center space-x-4">
+          {/* Input Mode Toggle */}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              type="button"
+              onClick={() => setInputMode('text')}
+              className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                inputMode === 'text'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              disabled={isGenerating}
+            >
+              <FileText className="h-4 w-4" />
+              <span>Text Prompt</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setInputMode('metadata')}
+              className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                inputMode === 'metadata'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              disabled={isGenerating}
+            >
+              <Upload className="h-4 w-4" />
+              <span>Metadata Upload</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setInputMode('enterprise')}
+              className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                inputMode === 'enterprise'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              disabled={isGenerating}
+            >
+              <Upload className="h-4 w-4" />
+              <span>Enterprise Guidelines Upload</span>
+            </button>
+          </div>
+          
           <button
             className="flex items-center space-x-2 px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             title="Refresh data"
@@ -114,6 +206,52 @@ const DataGeneration: React.FC = () => {
       </div>
       
       <ToastContainer toasts={toast.toasts} onRemove={toast.removeToast} />
+      
+      {/* Input Section */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Data Generation Input</h3>
+        
+        {inputMode === 'text' ? (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Text Prompt for Data Generation
+              </label>
+              <textarea
+                placeholder="Enter a description of the data you want to generate..."
+                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                rows={4}
+                disabled={isGenerating}
+                maxLength={5000}
+              />
+              <div className="flex justify-between items-center mt-1">
+                <div className="text-xs text-gray-500">
+                  0/5000 characters
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-end">
+              <motion.button
+                disabled={isGenerating}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Play className="h-4 w-4" />
+                <span>Generate from Prompt</span>
+              </motion.button>
+            </div>
+          </div>
+        ) : (
+          <DocumentUpload
+            onDocumentSelect={handleDocumentSubmit}
+            isLoading={isGenerating}
+            disabled={isGenerating}
+            uploadMode={inputMode}
+          />
+        )}
+      </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Generation Settings */}
