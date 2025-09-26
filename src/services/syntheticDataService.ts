@@ -79,27 +79,25 @@ export class SyntheticDataService {
   }
 
   /**
-   * Parse CSV content
+   * Parse CSV content using PapaParse
    */
   private static parseCSV(content: string): any[] {
-    const lines = content.split('\n').filter(line => line.trim());
-    if (lines.length < 2) throw new Error('CSV file must have at least a header and one data row');
+    const result = Papa.parse(content, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (header) => header.trim().replace(/"/g, ''),
+      transform: (value) => this.parseValue(value.trim().replace(/"/g, ''))
+    });
     
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-    const data = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-      if (values.length === headers.length) {
-        const row: any = {};
-        headers.forEach((header, index) => {
-          row[header] = this.parseValue(values[index]);
-        });
-        data.push(row);
-      }
+    if (result.errors.length > 0) {
+      console.warn('CSV parsing warnings:', result.errors);
     }
     
-    return data;
+    if (result.data.length === 0) {
+      throw new Error('No data found in CSV file');
+    }
+    
+    return result.data;
   }
 
   /**

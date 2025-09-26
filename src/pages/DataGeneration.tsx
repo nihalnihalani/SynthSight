@@ -407,6 +407,7 @@ const DataGeneration: React.FC = () => {
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    console.log('File selected:', file);
     if (file) {
       setUploadedFile(file);
       setIsAnalyzing(true);
@@ -478,6 +479,23 @@ const DataGeneration: React.FC = () => {
   };
 
   const generateRealSyntheticData = async () => {
+    console.log('Starting generation...');
+    console.log('Original data:', originalData);
+    console.log('Data analysis:', dataAnalysis);
+    
+    // Validate that we have data to work with
+    if (!originalData || originalData.length === 0) {
+      console.error('No original data available');
+      toast.error('No Data Available', 'Please upload a data file first before generating synthetic data.');
+      return;
+    }
+    
+    if (!dataAnalysis) {
+      console.error('No data analysis available');
+      toast.error('No Analysis Available', 'Please wait for data analysis to complete before generating synthetic data.');
+      return;
+    }
+    
     setIsGenerating(true);
     setGenerationProgress(0);
     
@@ -551,20 +569,20 @@ const DataGeneration: React.FC = () => {
       
       // Step 5: Complete
       setGenerationProgress(100);
-      setIsGenerating(false);
+          setIsGenerating(false);
       
-      setGeneratedFiles(prevFiles => 
-        prevFiles.map(file => 
-          file.id === newFile.id 
+          setGeneratedFiles(prevFiles => 
+            prevFiles.map(file => 
+              file.id === newFile.id 
             ? { 
                 ...file, 
                 status: 'completed', 
                 size: `${Math.floor(Math.random() * 500) + 100} KB`,
                 qualityScore: dataAnalysis?.qualityMetrics?.qualityScore || 0.85
               }
-            : file
-        )
-      );
+                : file
+            )
+          );
       
       toast.success('Generation Complete', `Generated ${generationSettings.recordCount} synthetic rows with ${generationSettings.modelType.toUpperCase()}`);
       
@@ -942,7 +960,7 @@ const DataGeneration: React.FC = () => {
         {syntheticData.length > 0 ? (
           <div className="space-y-6">
             {/* Quality Metrics */}
-            {qualityMetrics && (
+            {dataAnalysis?.qualityMetrics && (
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <div className="flex items-center space-x-2 mb-2">
@@ -1254,7 +1272,7 @@ const DataGeneration: React.FC = () => {
           </div>
         </div>
 
-        </div>
+      </div>
         </>
       ) : (
         /* Comprehensive Visualization Dashboard */
