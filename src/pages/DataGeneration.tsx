@@ -236,6 +236,7 @@ const calculateFeatureImportance = (original: DataAnalysisResult, synthetic: Dat
 };
 
 const DataGeneration: React.FC = () => {
+  console.log('DataGeneration component rendering...');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [inputMode, setInputMode] = useState<'text' | 'metadata' | 'enterprise'>('text');
@@ -406,6 +407,7 @@ const DataGeneration: React.FC = () => {
   ];
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('handleFileUpload called');
     const file = event.target.files?.[0];
     console.log('File selected:', file);
     if (file) {
@@ -417,15 +419,24 @@ const DataGeneration: React.FC = () => {
         console.log('Starting file processing for:', file.name);
         
         // Parse the uploaded file
+        console.log('About to parse file:', file.name, file.size);
         const parsedData = await SyntheticDataService.parseFile(file);
         console.log('File upload - Parsed data:', parsedData);
         console.log('File upload - Data length:', parsedData.length);
+        
+        if (!parsedData || parsedData.length === 0) {
+          throw new Error('No data found in uploaded file');
+        }
+        
         setOriginalData(parsedData);
+        console.log('Original data set successfully');
         
         // Analyze the data
+        console.log('About to analyze data...');
         const analysis = await SyntheticDataService.analyzeData(parsedData);
         console.log('File upload - Analysis result:', analysis);
         setDataAnalysis(analysis);
+        console.log('Data analysis set successfully');
         
         toast.success('File Processed', `${file.name} analyzed successfully. Found ${parsedData.length} records.`);
       } catch (error) {
@@ -486,6 +497,8 @@ const DataGeneration: React.FC = () => {
     console.log('Starting generation...');
     console.log('Original data:', originalData);
     console.log('Data analysis:', dataAnalysis);
+    console.log('Original data length:', originalData?.length);
+    console.log('Data analysis exists:', !!dataAnalysis);
     
     // Validate that we have data to work with
     if (!originalData || originalData.length === 0) {
@@ -499,6 +512,8 @@ const DataGeneration: React.FC = () => {
       toast.error('No Analysis Available', 'Please wait for data analysis to complete before generating synthetic data.');
       return;
     }
+    
+    console.log('Validation passed, proceeding with generation...');
     
     setIsGenerating(true);
     setGenerationProgress(0);
@@ -602,8 +617,18 @@ const DataGeneration: React.FC = () => {
   };
 
   const handleStartGeneration = async () => {
+    console.log('handleStartGeneration called');
+    console.log('uploadedFile:', uploadedFile);
+    console.log('originalData length:', originalData.length);
+    console.log('dataAnalysis:', !!dataAnalysis);
+    
     if (!uploadedFile || originalData.length === 0) {
       toast.error('No File Uploaded', 'Please upload a data file before generating synthetic data');
+      return;
+    }
+    
+    if (!dataAnalysis) {
+      toast.error('Data Analysis Required', 'Please wait for data analysis to complete before generating synthetic data');
       return;
     }
     
@@ -1180,15 +1205,59 @@ const DataGeneration: React.FC = () => {
                 </label>
               </div>
 
+              {/* Data Status */}
+              <div className="pt-4 border-t border-gray-200">
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-2 text-sm">
+                    {!uploadedFile ? (
+                      <>
+                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                        <span className="text-gray-600">No file uploaded</span>
+                      </>
+                    ) : !originalData || originalData.length === 0 ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin text-blue-500" />
+                        <span className="text-gray-600">Processing file...</span>
+                      </>
+                    ) : !dataAnalysis ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin text-blue-500" />
+                        <span className="text-gray-600">Analyzing data...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span className="text-gray-600">Ready for generation ({originalData.length} records)</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Generation Controls */}
               <div className="pt-4 border-t border-gray-200">
                 {!isGenerating ? (
                   <button
                     onClick={handleStartGeneration}
-                    className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    disabled={!uploadedFile || originalData.length === 0 || !dataAnalysis}
+                    className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    <Play className="h-4 w-4" />
-                    <span>Start Generation</span>
+                    {!uploadedFile || originalData.length === 0 ? (
+                      <>
+                        <AlertTriangle className="h-4 w-4" />
+                        <span>Upload Data First</span>
+                      </>
+                    ) : !dataAnalysis ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        <span>Analyzing Data...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="h-4 w-4" />
+                        <span>Start Generation</span>
+                      </>
+                    )}
                   </button>
                 ) : (
                   <div className="space-y-3">
