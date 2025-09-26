@@ -5,6 +5,7 @@ import { useToast } from '../hooks/useToast';
 import { ToastContainer } from '../components/Toast';
 import DocumentUpload from '../components/DocumentUpload';
 import { DocumentUpload as DocumentUploadType, AnalysisType } from '../types';
+import { SyntheticDataService, DataAnalysisResult, SyntheticDataRequest } from '../services/syntheticDataService';
 
 const DataGeneration: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -13,9 +14,10 @@ const DataGeneration: React.FC = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [syntheticData, setSyntheticData] = useState<any[]>([]);
   const [originalData, setOriginalData] = useState<any[]>([]);
-  const [qualityMetrics, setQualityMetrics] = useState<any>(null);
+  const [dataAnalysis, setDataAnalysis] = useState<DataAnalysisResult | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [activeTab, setActiveTab] = useState<'generator' | 'dashboard'>('generator');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [generatedFiles, setGeneratedFiles] = useState<Array<{
@@ -175,11 +177,32 @@ const DataGeneration: React.FC = () => {
     { extension: '.pdf', name: 'PDF', icon: FileText }
   ];
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setUploadedFile(file);
-      toast.success('File Uploaded', `${file.name} uploaded successfully`);
+      setIsAnalyzing(true);
+      
+      try {
+        toast.info('Processing File', 'Analyzing uploaded data...');
+        
+        // Parse the uploaded file
+        const parsedData = await SyntheticDataService.parseFile(file);
+        setOriginalData(parsedData);
+        
+        // Analyze the data
+        const analysis = await SyntheticDataService.analyzeData(parsedData);
+        setDataAnalysis(analysis);
+        
+        toast.success('File Processed', `${file.name} analyzed successfully. Found ${parsedData.length} records.`);
+      } catch (error) {
+        console.error('Error processing file:', error);
+        toast.error('Processing Failed', error instanceof Error ? error.message : 'Failed to process file');
+        setOriginalData([]);
+        setDataAnalysis(null);
+      } finally {
+        setIsAnalyzing(false);
+      }
     }
   };
 
@@ -193,7 +216,7 @@ const DataGeneration: React.FC = () => {
     setIsDragOver(false);
   };
 
-  const handleDrop = (event: React.DragEvent) => {
+  const handleDrop = async (event: React.DragEvent) => {
     event.preventDefault();
     setIsDragOver(false);
     
@@ -201,11 +224,32 @@ const DataGeneration: React.FC = () => {
     if (files.length > 0) {
       const file = files[0];
       setUploadedFile(file);
-      toast.success('File Uploaded', `${file.name} uploaded successfully`);
+      setIsAnalyzing(true);
+      
+      try {
+        toast.info('Processing File', 'Analyzing uploaded data...');
+        
+        // Parse the uploaded file
+        const parsedData = await SyntheticDataService.parseFile(file);
+        setOriginalData(parsedData);
+        
+        // Analyze the data
+        const analysis = await SyntheticDataService.analyzeData(parsedData);
+        setDataAnalysis(analysis);
+        
+        toast.success('File Processed', `${file.name} analyzed successfully. Found ${parsedData.length} records.`);
+      } catch (error) {
+        console.error('Error processing file:', error);
+        toast.error('Processing Failed', error instanceof Error ? error.message : 'Failed to process file');
+        setOriginalData([]);
+        setDataAnalysis(null);
+      } finally {
+        setIsAnalyzing(false);
+      }
     }
   };
 
-  const simulateSyntheticGeneration = async () => {
+  const generateRealSyntheticData = async () => {
     setIsGenerating(true);
     setGenerationProgress(0);
     
@@ -222,119 +266,73 @@ const DataGeneration: React.FC = () => {
     
     setGeneratedFiles(prev => [newFile, ...prev]);
     
-    // Simulate synthetic data generation with realistic progress
-    const totalSteps = 5;
-    let currentStep = 0;
-    
-    const interval = setInterval(() => {
-      currentStep++;
-      const progress = (currentStep / totalSteps) * 100;
-      setGenerationProgress(progress);
+    try {
+      // Step 1: Data Analysis
+      setGenerationProgress(20);
+      toast.info('Analyzing Data', 'Processing original data structure...');
       
-      if (currentStep === 1) {
-        toast.info('Processing Data', 'Analyzing uploaded data structure...');
-      } else if (currentStep === 2) {
-        toast.info('Training Model', `Training ${generationSettings.modelType.toUpperCase()} model...`);
-      } else if (currentStep === 3) {
-        toast.info('Generating Data', 'Creating synthetic samples...');
-      } else if (currentStep === 4) {
-        toast.info('Evaluating Quality', 'Running quality assessment...');
-      } else if (currentStep === 5) {
-        clearInterval(interval);
-        setIsGenerating(false);
-        
-        // Generate comprehensive mock data for dashboard
-        const generateMockData = (count: number, isOriginal: boolean = false) => {
-          return Array.from({ length: count }, (_, i) => ({
-            id: i + 1,
-            name: `${isOriginal ? 'Original' : 'Synthetic'} User ${i + 1}`,
-            email: `user${i + 1}@example.com`,
-            age: Math.floor(Math.random() * 50) + 18,
-            income: Math.floor(Math.random() * 100000) + 30000,
-            city: ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'][Math.floor(Math.random() * 5)],
-            credit_score: Math.floor(Math.random() * 200) + 300,
-            years_experience: Math.floor(Math.random() * 30) + 1,
-            education_level: ['High School', 'Bachelor', 'Master', 'PhD'][Math.floor(Math.random() * 4)],
-            department: ['Engineering', 'Sales', 'Marketing', 'HR', 'Finance'][Math.floor(Math.random() * 5)],
-            performance_score: Math.floor(Math.random() * 100) + 1,
-            satisfaction_rating: Math.floor(Math.random() * 5) + 1
-          }));
-        };
-
-        const mockOriginalData = generateMockData(Math.min(500, generationSettings.recordCount), true);
-        const mockSyntheticData = generateMockData(generationSettings.recordCount, false);
-        
-        setOriginalData(mockOriginalData);
-        setSyntheticData(mockSyntheticData);
-        
-        // Comprehensive quality metrics for dashboard
-        const mockQualityMetrics = {
-          // Overview Metrics
-          totalRecords: generationSettings.recordCount,
-          distributionSimilarity: 85 + Math.random() * 10,
-          driftIndex: 0.12 + Math.random() * 0.08,
-          privacyRisk: (generationSettings.privacyLevel * 100) + Math.random() * 10,
-          modelUtility: 78 + Math.random() * 15,
-          
-          // Detailed Metrics
-          qualityScore: 0.85 + Math.random() * 0.1,
-          privacyScore: generationSettings.privacyLevel,
-          statisticalSimilarity: 0.78 + Math.random() * 0.15,
-          dataCoverage: 0.92 + Math.random() * 0.05,
-          
-          // Privacy Metrics
-          differentialPrivacyEpsilon: 1.0 + Math.random() * 2.0,
-          membershipInferenceRisk: 0.15 + Math.random() * 0.1,
-          
-          // Distribution Metrics
-          ksStatistic: 0.08 + Math.random() * 0.05,
-          jensenShannonDivergence: 0.12 + Math.random() * 0.08,
-          
-          // Feature Importance
-          featureImportance: {
-            'age': 0.85 + Math.random() * 0.1,
-            'income': 0.92 + Math.random() * 0.05,
-            'credit_score': 0.78 + Math.random() * 0.15,
-            'years_experience': 0.65 + Math.random() * 0.2,
-            'education_level': 0.58 + Math.random() * 0.25,
-            'department': 0.45 + Math.random() * 0.3,
-            'performance_score': 0.82 + Math.random() * 0.12,
-            'satisfaction_rating': 0.71 + Math.random() * 0.18
-          },
-          
-          // Correlation Data
-          correlationMatrix: generateCorrelationMatrix(),
-          
-          // Distribution Data
-          distributions: generateDistributionData(mockOriginalData, mockSyntheticData)
-        };
-        setQualityMetrics(mockQualityMetrics);
-        
-        setGeneratedFiles(prevFiles => 
-          prevFiles.map(file => 
-            file.id === newFile.id 
-              ? { 
-                  ...file, 
-                  status: 'completed', 
-                  size: `${Math.floor(Math.random() * 500) + 100} KB`,
-                  qualityScore: mockQualityMetrics.qualityScore
-                }
-              : file
-          )
-        );
-        
-        toast.success('Generation Complete', `Generated ${generationSettings.recordCount} synthetic rows with ${generationSettings.modelType.toUpperCase()}`);
+      // Step 2: Model Training Simulation
+      setGenerationProgress(40);
+      toast.info('Training Model', `Training ${generationSettings.modelType.toUpperCase()} model...`);
+      
+      // Step 3: Generate Synthetic Data using LLM
+      setGenerationProgress(60);
+      toast.info('Generating Data', 'Creating synthetic samples with AI...');
+      
+      const syntheticRequest: SyntheticDataRequest = {
+        originalData: originalData,
+        modelType: generationSettings.modelType,
+        privacyLevel: generationSettings.privacyLevel,
+        recordCount: generationSettings.recordCount
+      };
+      
+      const generatedSyntheticData = await SyntheticDataService.generateSyntheticData(syntheticRequest);
+      setSyntheticData(generatedSyntheticData);
+      
+      // Step 4: Quality Assessment
+      setGenerationProgress(80);
+      toast.info('Evaluating Quality', 'Running quality assessment...');
+      
+      // Update analysis with synthetic data
+      if (dataAnalysis) {
+        const updatedAnalysis = await SyntheticDataService.analyzeData(generatedSyntheticData);
+        setDataAnalysis(updatedAnalysis);
       }
-    }, 1000);
+      
+      // Step 5: Complete
+      setGenerationProgress(100);
+      setIsGenerating(false);
+      
+      setGeneratedFiles(prevFiles => 
+        prevFiles.map(file => 
+          file.id === newFile.id 
+            ? { 
+                ...file, 
+                status: 'completed', 
+                size: `${Math.floor(Math.random() * 500) + 100} KB`,
+                qualityScore: dataAnalysis?.qualityMetrics?.qualityScore || 0.85
+              }
+            : file
+        )
+      );
+      
+      toast.success('Generation Complete', `Generated ${generationSettings.recordCount} synthetic rows with ${generationSettings.modelType.toUpperCase()}`);
+      
+    } catch (error) {
+      console.error('Error generating synthetic data:', error);
+      toast.error('Generation Failed', error instanceof Error ? error.message : 'Failed to generate synthetic data');
+      setIsGenerating(false);
+      setGenerationProgress(0);
+    }
   };
 
   const handleStartGeneration = async () => {
-    if (!uploadedFile) {
+    if (!uploadedFile || originalData.length === 0) {
       toast.error('No File Uploaded', 'Please upload a data file before generating synthetic data');
       return;
     }
     
-    await simulateSyntheticGeneration();
+    await generateRealSyntheticData();
   };
 
   const handleStopGeneration = () => {
@@ -986,7 +984,7 @@ const DataGeneration: React.FC = () => {
           </div>
         </div>
 
-      </div>
+        </div>
         </>
       ) : (
         /* Comprehensive Visualization Dashboard */
@@ -1004,7 +1002,7 @@ const DataGeneration: React.FC = () => {
                   <Database className="h-8 w-8 text-blue-600" />
                   <div>
                     <p className="text-sm font-medium text-blue-800">Total Records</p>
-                    <p className="text-2xl font-bold text-blue-900">{qualityMetrics?.totalRecords?.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-blue-900">{dataAnalysis?.qualityMetrics?.totalRecords?.toLocaleString()}</p>
                   </div>
                 </div>
                 <div className="text-xs text-blue-600">Synthetic data points</div>
@@ -1015,7 +1013,7 @@ const DataGeneration: React.FC = () => {
                   <BarChart className="h-8 w-8 text-green-600" />
                   <div>
                     <p className="text-sm font-medium text-green-800">Distribution Similarity</p>
-                    <p className="text-2xl font-bold text-green-900">{qualityMetrics?.distributionSimilarity?.toFixed(1)}%</p>
+                    <p className="text-2xl font-bold text-green-900">{dataAnalysis?.qualityMetrics?.distributionSimilarity?.toFixed(1)}%</p>
                   </div>
                 </div>
                 <div className="text-xs text-green-600">Real vs Synthetic</div>
@@ -1026,7 +1024,7 @@ const DataGeneration: React.FC = () => {
                   <TrendingUp className="h-8 w-8 text-orange-600" />
                   <div>
                     <p className="text-sm font-medium text-orange-800">Drift Index</p>
-                    <p className="text-2xl font-bold text-orange-900">{qualityMetrics?.driftIndex?.toFixed(3)}</p>
+                    <p className="text-2xl font-bold text-orange-900">{dataAnalysis?.qualityMetrics?.driftIndex?.toFixed(3)}</p>
                   </div>
                 </div>
                 <div className="text-xs text-orange-600">Statistical drift</div>
@@ -1037,7 +1035,7 @@ const DataGeneration: React.FC = () => {
                   <Shield className="h-8 w-8 text-red-600" />
                   <div>
                     <p className="text-sm font-medium text-red-800">Privacy Risk</p>
-                    <p className="text-2xl font-bold text-red-900">{qualityMetrics?.privacyRisk?.toFixed(1)}%</p>
+                    <p className="text-2xl font-bold text-red-900">{dataAnalysis?.qualityMetrics?.privacyRisk?.toFixed(1)}%</p>
                   </div>
                 </div>
                 <div className="text-xs text-red-600">Risk assessment</div>
@@ -1048,7 +1046,7 @@ const DataGeneration: React.FC = () => {
                   <Target className="h-8 w-8 text-purple-600" />
                   <div>
                     <p className="text-sm font-medium text-purple-800">Model Utility</p>
-                    <p className="text-2xl font-bold text-purple-900">{qualityMetrics?.modelUtility?.toFixed(1)}%</p>
+                    <p className="text-2xl font-bold text-purple-900">{dataAnalysis?.qualityMetrics?.modelUtility?.toFixed(1)}%</p>
                   </div>
                 </div>
                 <div className="text-xs text-purple-600">ML training value</div>
@@ -1068,7 +1066,7 @@ const DataGeneration: React.FC = () => {
               <div>
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Numeric Features</h4>
                 <div className="space-y-6">
-                  {qualityMetrics?.distributions?.numeric && Object.entries(qualityMetrics.distributions.numeric).map(([feature, data]: [string, any]) => (
+                  {dataAnalysis?.distributions?.numeric && Object.entries(dataAnalysis.distributions.numeric).map(([feature, data]: [string, any]) => (
                     <div key={feature} className="border border-gray-200 rounded-lg p-4">
                       <h5 className="font-medium text-gray-900 mb-3 capitalize">{feature.replace('_', ' ')}</h5>
                       <div className="grid grid-cols-2 gap-4 text-sm">
@@ -1116,7 +1114,7 @@ const DataGeneration: React.FC = () => {
               <div>
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Categorical Features</h4>
                 <div className="space-y-6">
-                  {qualityMetrics?.distributions?.categorical && Object.entries(qualityMetrics.distributions.categorical).map(([feature, data]: [string, any]) => (
+                  {dataAnalysis?.distributions?.categorical && Object.entries(dataAnalysis.distributions.categorical).map(([feature, data]: [string, any]) => (
                     <div key={feature} className="border border-gray-200 rounded-lg p-4">
                       <h5 className="font-medium text-gray-900 mb-3 capitalize">{feature.replace('_', ' ')}</h5>
                       <div className="space-y-3">
@@ -1164,12 +1162,12 @@ const DataGeneration: React.FC = () => {
                 <div className="border border-gray-200 rounded-lg p-4">
                   <div className="grid grid-cols-7 gap-1 text-xs">
                     <div></div>
-                    {Object.keys(qualityMetrics?.correlationMatrix || {}).map(feature => (
+                    {Object.keys(dataAnalysis?.correlations || {}).map(feature => (
                       <div key={feature} className="text-center font-medium text-gray-700 p-1">
                         {feature.substring(0, 3)}
                       </div>
                     ))}
-                    {Object.entries(qualityMetrics?.correlationMatrix || {}).map(([feature1, correlations]: [string, any]) => (
+                    {Object.entries(dataAnalysis?.correlations || {}).map(([feature1, correlations]: [string, any]) => (
                       <React.Fragment key={feature1}>
                         <div className="text-center font-medium text-gray-700 p-1">
                           {feature1.substring(0, 3)}
@@ -1197,7 +1195,7 @@ const DataGeneration: React.FC = () => {
               <div>
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Feature Importance</h4>
                 <div className="space-y-3">
-                  {qualityMetrics?.featureImportance && Object.entries(qualityMetrics.featureImportance)
+                  {dataAnalysis?.qualityMetrics?.featureImportance && Object.entries(dataAnalysis.qualityMetrics.featureImportance)
                     .sort(([,a], [,b]) => b - a)
                     .map(([feature, importance]: [string, any]) => (
                     <div key={feature} className="flex items-center space-x-3">
@@ -1231,7 +1229,7 @@ const DataGeneration: React.FC = () => {
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-blue-800">Differential Privacy (ε)</span>
-                      <span className="text-lg font-bold text-blue-900">{qualityMetrics?.differentialPrivacyEpsilon?.toFixed(2)}</span>
+                      <span className="text-lg font-bold text-blue-900">{dataAnalysis?.qualityMetrics?.differentialPrivacyEpsilon?.toFixed(2)}</span>
                     </div>
                     <div className="text-xs text-blue-600">Lower values = higher privacy</div>
                   </div>
@@ -1239,7 +1237,7 @@ const DataGeneration: React.FC = () => {
                   <div className="bg-red-50 p-4 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-red-800">Membership Inference Risk</span>
-                      <span className="text-lg font-bold text-red-900">{(qualityMetrics?.membershipInferenceRisk * 100)?.toFixed(1)}%</span>
+                      <span className="text-lg font-bold text-red-900">{(dataAnalysis?.qualityMetrics?.membershipInferenceRisk * 100)?.toFixed(1)}%</span>
                     </div>
                     <div className="text-xs text-red-600">Risk of data leakage</div>
                   </div>
@@ -1247,7 +1245,7 @@ const DataGeneration: React.FC = () => {
                   <div className="bg-green-50 p-4 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-green-800">KS Statistic</span>
-                      <span className="text-lg font-bold text-green-900">{qualityMetrics?.ksStatistic?.toFixed(3)}</span>
+                      <span className="text-lg font-bold text-green-900">{dataAnalysis?.qualityMetrics?.ksStatistic?.toFixed(3)}</span>
                     </div>
                     <div className="text-xs text-green-600">Distribution similarity</div>
                   </div>
@@ -1262,52 +1260,52 @@ const DataGeneration: React.FC = () => {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-700">Distribution Match</span>
-                        <span className="text-sm font-medium text-gray-900">{(qualityMetrics?.statisticalSimilarity * 100)?.toFixed(1)}%</span>
+                        <span className="text-sm font-medium text-gray-900">{(dataAnalysis?.qualityMetrics?.statisticalSimilarity * 100)?.toFixed(1)}%</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${qualityMetrics?.statisticalSimilarity * 100}%` }}></div>
+                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${dataAnalysis?.qualityMetrics?.statisticalSimilarity * 100}%` }}></div>
                       </div>
                       
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-700">Correlation Retention</span>
-                        <span className="text-sm font-medium text-gray-900">{(qualityMetrics?.qualityScore * 100)?.toFixed(1)}%</span>
+                        <span className="text-sm font-medium text-gray-900">{(dataAnalysis?.qualityMetrics?.qualityScore * 100)?.toFixed(1)}%</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-green-500 h-2 rounded-full" style={{ width: `${qualityMetrics?.qualityScore * 100}%` }}></div>
+                        <div className="bg-green-500 h-2 rounded-full" style={{ width: `${dataAnalysis?.qualityMetrics?.qualityScore * 100}%` }}></div>
                       </div>
                       
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-700">Data Diversity</span>
-                        <span className="text-sm font-medium text-gray-900">{(qualityMetrics?.dataCoverage * 100)?.toFixed(1)}%</span>
+                        <span className="text-sm font-medium text-gray-900">{(dataAnalysis?.qualityMetrics?.dataCoverage * 100)?.toFixed(1)}%</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${qualityMetrics?.dataCoverage * 100}%` }}></div>
+                        <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${dataAnalysis?.qualityMetrics?.dataCoverage * 100}%` }}></div>
                       </div>
                     </div>
                     
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-700">Model Utility</span>
-                        <span className="text-sm font-medium text-gray-900">{qualityMetrics?.modelUtility?.toFixed(1)}%</span>
+                        <span className="text-sm font-medium text-gray-900">{dataAnalysis?.qualityMetrics?.modelUtility?.toFixed(1)}%</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${qualityMetrics?.modelUtility}%` }}></div>
+                        <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${dataAnalysis?.qualityMetrics?.modelUtility}%` }}></div>
                       </div>
                       
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-700">Privacy Risk</span>
-                        <span className="text-sm font-medium text-gray-900">{qualityMetrics?.privacyRisk?.toFixed(1)}%</span>
+                        <span className="text-sm font-medium text-gray-900">{dataAnalysis?.qualityMetrics?.privacyRisk?.toFixed(1)}%</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-red-500 h-2 rounded-full" style={{ width: `${qualityMetrics?.privacyRisk}%` }}></div>
+                        <div className="bg-red-500 h-2 rounded-full" style={{ width: `${dataAnalysis?.qualityMetrics?.privacyRisk}%` }}></div>
                       </div>
                       
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-700">Jensen-Shannon Divergence</span>
-                        <span className="text-sm font-medium text-gray-900">{qualityMetrics?.jensenShannonDivergence?.toFixed(3)}</span>
+                        <span className="text-sm font-medium text-gray-900">{dataAnalysis?.qualityMetrics?.jensenShannonDivergence?.toFixed(3)}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${qualityMetrics?.jensenShannonDivergence * 1000}%` }}></div>
+                        <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${dataAnalysis?.qualityMetrics?.jensenShannonDivergence * 1000}%` }}></div>
                       </div>
                     </div>
                   </div>
@@ -1358,7 +1356,7 @@ const DataGeneration: React.FC = () => {
                 <div className="space-y-3">
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <p className="text-sm font-medium text-gray-800 mb-1">For ML Training</p>
-                    <p className="text-xs text-gray-600">This synthetic data is suitable for model training with {qualityMetrics?.modelUtility?.toFixed(1)}% utility score</p>
+                    <p className="text-xs text-gray-600">This synthetic data is suitable for model training with {dataAnalysis?.qualityMetrics?.modelUtility?.toFixed(1)}% utility score</p>
                   </div>
                   
                   <div className="p-3 bg-gray-50 rounded-lg">
