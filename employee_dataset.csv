@@ -1,0 +1,101 @@
+employee_id,name,department,salary,years_experience,performance_score,location,education_level,age,gender,is_manager
+E001,John Smith,Engineering,75000,3,85,New York,Bachelor,28,Male,No
+E002,Sarah Johnson,Marketing,68000,5,92,Los Angeles,Master,32,Female,Yes
+E003,Mike Brown,Sales,55000,2,78,Chicago,Bachelor,25,Male,No
+E004,Emily Davis,Engineering,85000,7,90,San Francisco,Master,35,Female,Yes
+E005,David Wilson,Marketing,95000,10,88,Seattle,PhD,40,Male,Yes
+E006,Anna Taylor,Sales,62000,4,80,Boston,Bachelor,29,Female,No
+E007,James Miller,Engineering,88000,9,95,Austin,Master,38,Male,Yes
+E008,Olivia White,Marketing,60000,2,82,Denver,Bachelor,26,Female,No
+E009,Daniel Moore,Engineering,110000,15,91,New York,PhD,45,Male,Yes
+E010,Sophia Hall,Sales,70000,6,87,Los Angeles,Master,30,Female,No
+E011,Liam Green,Marketing,75000,6,89,Chicago,Bachelor,33,Male,No
+E012,Isabella King,Engineering,82000,3,84,San Francisco,Bachelor,27,Female,No
+E013,Mason Wright,Sales,100000,12,93,Seattle,Master,42,Male,Yes
+E014,Ava Lopez,Marketing,71000,4,86,Boston,Bachelor,31,Female,No
+E015,Ethan Hill,Engineering,92000,8,90,Austin,Master,36,Male,Yes
+E016,Mia Scott,Sales,58000,1,75,Denver,High School,24,Female,No
+E017,Noah Adams,Marketing,90000,11,94,New York,PhD,39,Male,Yes
+E018,Charlotte Baker,Engineering,67000,4,83,Los Angeles,Bachelor,29,Female,No
+E019,Alexander Nelson,Sales,78000,7,88,Chicago,Master,34,Male,No
+E020,Harper Carter,Marketing,69000,5,85,San Francisco,Bachelor,30,Female,No
+E021,Benjamin Lee,Engineering,96000,10,92,Seattle,Master,41,Male,Yes
+E022,Amelia Rodriguez,Sales,64000,3,81,Boston,Bachelor,28,Female,No
+E023,Lucas Martinez,Marketing,73000,7,87,Austin,Bachelor,35,Male,No
+E024,Evelyn Thompson,Engineering,89000,8,89,Denver,Master,37,Female,Yes
+E025,Henry Garcia,Sales,72000,5,84,New York,Bachelor,32,Male,No
+E026,Abigail Martinez,Marketing,66000,3,79,Los Angeles,Bachelor,27,Female,No
+E027,Sebastian Anderson,Engineering,94000,11,93,Chicago,Master,40,Male,Yes
+E028,Madison Taylor,Sales,61000,2,77,San Francisco,Bachelor,26,Female,No
+E029,Jackson Thomas,Marketing,76000,6,86,Seattle,Bachelor,33,Male,No
+E030,Scarlett Hernandez,Engineering,87000,9,91,Austin,Master,38,Female,Yes
+E031,Aiden Moore,Sales,69000,4,82,Boston,Bachelor,30,Male,No
+E032,Chloe Jackson,Marketing,71000,5,88,Denver,Bachelor,31,Female,No
+E033,Caleb White,Engineering,92000,12,94,New York,Master,42,Male,Yes
+E034,Zoe Harris,Sales,63000,3,80,Los Angeles,Bachelor,28,Female,No
+E035,Ryan Martin,Marketing,74000,7,85,Chicago,Bachelor,35,Male,No
+E036,Lily Thompson,Engineering,85000,8,90,San Francisco,Master,37,Female,Yes
+E037,Nathan Garcia,Sales,67000,4,83,Seattle,Bachelor,32,Male,No
+E038,Grace Martinez,Marketing,68000,4,81,Boston,Bachelor,29,Female,No
+E039,Owen Anderson,Engineering,98000,13,95,Austin,Master,43,Male,Yes
+E040,Hannah Taylor,Sales,59000,2,76,Denver,Bachelor,25,Female,No
+E041,Luke Thomas,Marketing,72000,6,87,New York,Bachelor,34,Male,No
+E042,Sofia Hernandez,Engineering,86000,9,92,Los Angeles,Master,39,Female,Yes
+E043,Isaac Moore,Sales,65000,3,79,Chicago,Bachelor,29,Male,No
+E044,Avery Jackson,Marketing,70000,5,84,San Francisco,Bachelor,31,Female,No
+E045,Jack White,Engineering,91000,11,93,Seattle,Master,41,Male,Yes
+E046,Ella Harris,Sales,62000,2,78,Austin,Bachelor,27,Female,No
+E047,Connor Martin,Marketing,75000,7,86,Boston,Bachelor,36,Male,No
+E048,Addison Thompson,Engineering,88000,10,91,Denver,Master,40,Female,Yes
+E049,Carter Garcia,Sales,68000,4,82,New York,Bachelor,32,Male,No
+E050,Aubrey Martinez,Marketing,69000,4,80,Los Angeles,Bachelor,30,Female,No
+E051,Grayson Anderson,Engineering,95000,12,94,Chicago,Master,42,Male,Yes
+E052,Zoey Taylor,Sales,61000,3,77,San Francisco,Bachelor,28,Female,No
+E053,Lincoln Thomas,Marketing,73000,6,85,Seattle,Bachelor,34,Male,No
+E054,Paisley Hernandez,Engineering,87000,9,90,Austin,Master,38,Female,Yes
+E055,Landon Moore,Sales,66000,4,81,Boston,Bachelor,31,Male,No
+E056,Natalie Jackson,Marketing,71000,5,87,Denver,Bachelor,32,Female,No
+E057,Easton White,Engineering,93000,11,92,New York,Master,40,Male,Yes
+E058,Claire Harris,Sales,64000,2,79,Los Angeles,Bachelor,26,Female,No
+E059,Jaxon Martin,Marketing,74000,7,86,Chicago,Bachelor,35,Male,No
+E060,Samantha Thompson,Engineering,89000,10,91,San Francisco,Master,39,Female,Yes
+E061,Colton Garcia,Sales,67000,3,80,Seattle,Bachelor,29,Male,No
+E062,Allison Martinez,Marketing,68000,4,82,Austin,Bachelor,30,Female,No
+E063,Braxton Anderson,Engineering,96000,13,95,Boston,Master,43,Male,Yes
+E064,Savannah Taylor,Sales,60000,2,76,Denver,Bachelor,25,Female,No
+E065,Ashton Thomas,Marketing,72000,6,87,New York,Bachelor,34,Male,No
+E066,Caroline Hernandez,Engineering,86000,9,92,Los Angeles,Master,38,Female,Yes
+E067,Maverick Moore,Sales,65000,4,79,Chicago,Bachelor,31,Male,No
+E068,Natalia Jackson,Marketing,70000,5,84,San Francisco,Bachelor,32,Female,No
+E069,Tristan White,Engineering,92000,11,93,Seattle,Master,41,Male,Yes
+E070,Genesis Harris,Sales,62000,3,78,Austin,Bachelor,28,Female,No
+E071,Ryder Martin,Marketing,75000,7,86,Boston,Bachelor,36,Male,No
+E072,Ariana Thompson,Engineering,88000,10,91,Denver,Master,40,Female,Yes
+E073,Declan Garcia,Sales,68000,4,82,New York,Bachelor,32,Male,No
+E074,Aaliyah Martinez,Marketing,69000,4,80,Los Angeles,Bachelor,30,Female,No
+E075,Knox Anderson,Engineering,95000,12,94,Chicago,Master,42,Male,Yes
+E076,Kennedy Taylor,Sales,61000,2,77,San Francisco,Bachelor,27,Female,No
+E077,Bentley Thomas,Marketing,73000,6,85,Seattle,Bachelor,34,Male,No
+E078,Makayla Hernandez,Engineering,87000,9,90,Austin,Master,38,Female,Yes
+E079,Weston Moore,Sales,66000,4,81,Boston,Bachelor,31,Male,No
+E080,Serenity Jackson,Marketing,71000,5,87,Denver,Bachelor,32,Female,No
+E081,Elias White,Engineering,93000,11,92,New York,Master,40,Male,Yes
+E082,Adalyn Harris,Sales,64000,3,79,Los Angeles,Bachelor,29,Female,No
+E083,Waylon Martin,Marketing,74000,7,86,Chicago,Bachelor,35,Male,No
+E084,Delilah Thompson,Engineering,89000,10,91,San Francisco,Master,39,Female,Yes
+E085,Emmett Garcia,Sales,67000,3,80,Seattle,Bachelor,29,Male,No
+E086,Adeline Martinez,Marketing,68000,4,82,Austin,Bachelor,30,Female,No
+E087,Everett Anderson,Engineering,96000,13,95,Boston,Master,43,Male,Yes
+E088,Piper Taylor,Sales,60000,2,76,Denver,Bachelor,25,Female,No
+E089,Miles Thomas,Marketing,72000,6,87,New York,Bachelor,34,Male,No
+E090,Layla Hernandez,Engineering,86000,9,92,Los Angeles,Master,38,Female,Yes
+E091,Silas Moore,Sales,65000,4,79,Chicago,Bachelor,31,Male,No
+E092,Nora Jackson,Marketing,70000,5,84,San Francisco,Bachelor,32,Female,No
+E093,Atticus White,Engineering,92000,11,93,Seattle,Master,41,Male,Yes
+E094,Zoey Harris,Sales,62000,3,78,Austin,Bachelor,28,Female,No
+E095,Crew Martin,Marketing,75000,7,86,Boston,Bachelor,36,Male,No
+E096,Willow Thompson,Engineering,88000,10,91,Denver,Master,40,Female,Yes
+E097,Jude Garcia,Sales,68000,4,82,New York,Bachelor,32,Male,No
+E098,Violet Martinez,Marketing,69000,4,80,Los Angeles,Bachelor,30,Female,No
+E099,Brooks Anderson,Engineering,95000,12,94,Chicago,Master,42,Male,Yes
+E100,Claire Taylor,Sales,61000,2,77,San Francisco,Bachelor,27,Female,No

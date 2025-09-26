@@ -1,0 +1,101 @@
+customer_id,industry,region,monthly_usage,contract_length,support_tickets,last_login,churned
+C001,E-commerce,North America,120,12,2,2025-09-25,No
+C002,Healthcare,Europe,45,6,5,2025-08-15,Yes
+C003,FinTech,Asia-Pacific,210,24,1,2025-09-26,No
+C004,Education,North America,30,3,6,2025-07-02,Yes
+C005,Manufacturing,Europe,150,12,0,2025-09-24,No
+C006,E-commerce,Latin America,60,6,4,2025-08-30,Yes
+C007,Healthcare,Asia-Pacific,90,12,2,2025-09-25,No
+C008,Education,Europe,20,1,7,2025-06-20,Yes
+C009,FinTech,North America,300,24,1,2025-09-26,No
+C010,E-commerce,Asia-Pacific,70,6,3,2025-09-01,Yes
+C011,Manufacturing,North America,110,12,0,2025-09-24,No
+C012,Healthcare,Latin America,35,3,5,2025-08-10,Yes
+C013,Education,Asia-Pacific,50,6,3,2025-09-20,No
+C014,FinTech,Europe,180,12,1,2025-09-25,No
+C015,Manufacturing,Asia-Pacific,25,1,6,2025-07-18,Yes
+C016,E-commerce,North America,250,24,0,2025-09-26,No
+C017,Education,Europe,40,3,4,2025-08-05,Yes
+C018,FinTech,Latin America,195,12,1,2025-09-23,No
+C019,Manufacturing,Europe,80,6,2,2025-09-15,No
+C020,Healthcare,North America,15,1,8,2025-06-10,Yes
+C021,E-commerce,Europe,160,12,1,2025-09-24,No
+C022,Healthcare,Asia-Pacific,55,6,4,2025-08-20,Yes
+C023,FinTech,North America,220,24,0,2025-09-26,No
+C024,Education,Latin America,35,3,5,2025-07-15,Yes
+C025,Manufacturing,Asia-Pacific,95,12,2,2025-09-22,No
+C026,E-commerce,Europe,75,6,3,2025-09-05,Yes
+C027,Healthcare,North America,130,12,1,2025-09-25,No
+C028,Education,Asia-Pacific,45,6,4,2025-08-25,Yes
+C029,FinTech,Latin America,200,24,0,2025-09-24,No
+C030,Manufacturing,Europe,65,6,3,2025-09-10,Yes
+C031,E-commerce,North America,180,12,1,2025-09-25,No
+C032,Healthcare,Asia-Pacific,40,3,6,2025-08-05,Yes
+C033,Education,Europe,25,1,7,2025-06-30,Yes
+C034,FinTech,North America,280,24,0,2025-09-26,No
+C035,Manufacturing,Latin America,85,6,2,2025-09-18,No
+C036,E-commerce,Asia-Pacific,100,12,2,2025-09-23,No
+C037,Healthcare,Europe,50,6,4,2025-08-15,Yes
+C038,Education,North America,30,3,5,2025-07-10,Yes
+C039,FinTech,Asia-Pacific,240,24,1,2025-09-25,No
+C040,Manufacturing,Europe,70,6,2,2025-09-12,No
+C041,E-commerce,Latin America,140,12,1,2025-09-24,No
+C042,Healthcare,North America,60,6,3,2025-08-20,Yes
+C043,Education,Asia-Pacific,40,3,4,2025-08-01,Yes
+C044,FinTech,Europe,190,12,0,2025-09-25,No
+C045,Manufacturing,North America,105,12,1,2025-09-24,No
+C046,E-commerce,Europe,90,6,2,2025-09-08,No
+C047,Healthcare,Latin America,45,3,5,2025-08-12,Yes
+C048,Education,North America,35,3,4,2025-07-20,Yes
+C049,FinTech,Asia-Pacific,260,24,0,2025-09-26,No
+C050,Manufacturing,Europe,75,6,2,2025-09-14,No
+C051,E-commerce,North America,170,12,1,2025-09-25,No
+C052,Healthcare,Asia-Pacific,55,6,3,2025-08-18,Yes
+C053,Education,Latin America,30,1,6,2025-06-25,Yes
+C054,FinTech,Europe,210,24,0,2025-09-25,No
+C055,Manufacturing,Asia-Pacific,80,6,2,2025-09-16,No
+C056,E-commerce,Europe,110,12,1,2025-09-22,No
+C057,Healthcare,North America,65,6,3,2025-08-22,Yes
+C058,Education,Asia-Pacific,45,6,3,2025-08-28,Yes
+C059,FinTech,Latin America,230,24,0,2025-09-24,No
+C060,Manufacturing,Europe,85,6,1,2025-09-18,No
+C061,E-commerce,North America,200,12,0,2025-09-26,No
+C062,Healthcare,Asia-Pacific,50,3,5,2025-08-08,Yes
+C063,Education,Europe,25,1,7,2025-06-15,Yes
+C064,FinTech,North America,290,24,0,2025-09-26,No
+C065,Manufacturing,Latin America,90,6,2,2025-09-20,No
+C066,E-commerce,Asia-Pacific,120,12,1,2025-09-24,No
+C067,Healthcare,Europe,60,6,3,2025-08-25,Yes
+C068,Education,North America,40,3,4,2025-07-25,Yes
+C069,FinTech,Asia-Pacific,250,24,0,2025-09-25,No
+C070,Manufacturing,Europe,95,6,1,2025-09-20,No
+C071,E-commerce,Latin America,150,12,1,2025-09-24,No
+C072,Healthcare,North America,70,6,2,2025-08-28,Yes
+C073,Education,Asia-Pacific,35,3,5,2025-08-03,Yes
+C074,FinTech,Europe,220,24,0,2025-09-25,No
+C075,Manufacturing,North America,100,12,1,2025-09-24,No
+C076,E-commerce,Europe,80,6,2,2025-09-10,No
+C077,Healthcare,Latin America,50,3,4,2025-08-15,Yes
+C078,Education,North America,30,1,6,2025-06-20,Yes
+C079,FinTech,Asia-Pacific,270,24,0,2025-09-26,No
+C080,Manufacturing,Europe,70,6,2,2025-09-12,No
+C081,E-commerce,North America,190,12,0,2025-09-25,No
+C082,Healthcare,Asia-Pacific,45,3,5,2025-08-05,Yes
+C083,Education,Latin America,25,1,7,2025-06-10,Yes
+C084,FinTech,Europe,240,24,0,2025-09-25,No
+C085,Manufacturing,Asia-Pacific,75,6,2,2025-09-14,No
+C086,E-commerce,Europe,130,12,1,2025-09-23,No
+C087,Healthcare,North America,55,6,3,2025-08-18,Yes
+C088,Education,Asia-Pacific,40,3,4,2025-08-01,Yes
+C089,FinTech,Latin America,260,24,0,2025-09-24,No
+C090,Manufacturing,Europe,85,6,1,2025-09-18,No
+C091,E-commerce,North America,160,12,1,2025-09-25,No
+C092,Healthcare,Asia-Pacific,60,6,3,2025-08-22,Yes
+C093,Education,Europe,35,3,4,2025-07-30,Yes
+C094,FinTech,North America,300,24,0,2025-09-26,No
+C095,Manufacturing,Latin America,95,6,2,2025-09-20,No
+C096,E-commerce,Asia-Pacific,110,12,1,2025-09-24,No
+C097,Healthcare,Europe,65,6,2,2025-08-28,Yes
+C098,Education,North America,45,3,3,2025-08-05,Yes
+C099,FinTech,Asia-Pacific,280,24,0,2025-09-25,No
+C100,Manufacturing,Europe,90,6,1,2025-09-20,No

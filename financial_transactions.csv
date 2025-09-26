@@ -1,0 +1,101 @@
+transaction_id,customer_id,amount,transaction_type,merchant_category,payment_method,date,time,location,is_fraudulent
+T001,C001,125.50,Purchase,Electronics,Credit Card,2025-01-15,14:30:25,New York,No
+T002,C002,45.20,Purchase,Books,Debit Card,2025-01-15,09:15:10,Los Angeles,No
+T003,C003,300.00,Purchase,Home Goods,Credit Card,2025-01-15,16:45:30,Chicago,No
+T004,C004,25.00,Purchase,Clothing,Cash,2025-01-15,11:20:15,Houston,No
+T005,C005,500.75,Purchase,Electronics,Credit Card,2025-01-15,20:10:45,Phoenix,No
+T006,C006,80.00,Purchase,Books,Debit Card,2025-01-15,13:35:20,Philadelphia,No
+T007,C007,210.30,Purchase,Home Goods,Credit Card,2025-01-15,15:25:40,San Antonio,No
+T008,C008,35.99,Purchase,Clothing,Cash,2025-01-15,10:50:30,San Diego,No
+T009,C009,150.00,Purchase,Electronics,Credit Card,2025-01-15,18:15:55,Dallas,No
+T010,C010,62.80,Purchase,Books,Debit Card,2025-01-15,12:40:10,San Jose,No
+T011,C011,320.00,Purchase,Home Goods,Credit Card,2025-01-15,17:30:25,Austin,No
+T012,C012,28.50,Purchase,Clothing,Cash,2025-01-15,09:45:15,Jacksonville,No
+T013,C013,450.20,Purchase,Electronics,Credit Card,2025-01-15,19:20:35,Fort Worth,No
+T014,C014,70.10,Purchase,Books,Debit Card,2025-01-15,14:55:40,Columbus,No
+T015,C015,135.60,Purchase,Home Goods,Credit Card,2025-01-15,16:10:20,Charlotte,No
+T016,C016,40.00,Purchase,Clothing,Cash,2025-01-15,11:30:45,Seattle,No
+T017,C017,180.90,Purchase,Electronics,Credit Card,2025-01-15,18:45:30,Denver,No
+T018,C018,95.00,Purchase,Books,Debit Card,2025-01-15,13:20:15,Washington,No
+T019,C019,350.00,Purchase,Home Goods,Credit Card,2025-01-15,17:15:50,Boston,No
+T020,C020,30.25,Purchase,Clothing,Cash,2025-01-15,10:15:25,El Paso,No
+T021,C021,480.00,Purchase,Electronics,Credit Card,2025-01-15,20:30:40,Nashville,No
+T022,C022,110.00,Purchase,Books,Debit Card,2025-01-15,15:40:30,Detroit,No
+T023,C023,160.40,Purchase,Home Goods,Credit Card,2025-01-15,16:25:15,Oklahoma City,No
+T024,C024,48.75,Purchase,Clothing,Cash,2025-01-15,12:05:20,Portland,No
+T025,C025,380.10,Purchase,Electronics,Credit Card,2025-01-15,19:50:55,Las Vegas,No
+T026,C026,75.20,Purchase,Books,Debit Card,2025-01-15,14:15:35,Memphis,No
+T027,C027,195.80,Purchase,Home Goods,Credit Card,2025-01-15,17:40:25,Louisville,No
+T028,C028,42.30,Purchase,Clothing,Cash,2025-01-15,11:45:10,Baltimore,No
+T029,C029,520.00,Purchase,Electronics,Credit Card,2025-01-15,20:15:45,Milwaukee,No
+T030,C030,88.90,Purchase,Books,Debit Card,2025-01-15,15:30:20,Albuquerque,No
+T031,C031,225.60,Purchase,Home Goods,Credit Card,2025-01-15,18:20:35,Tucson,No
+T032,C032,55.75,Purchase,Clothing,Cash,2025-01-15,12:25:15,Fresno,No
+T033,C033,650.00,Purchase,Electronics,Credit Card,2025-01-15,21:00:30,Sacramento,No
+T034,C034,105.40,Purchase,Books,Debit Card,2025-01-15,16:35:25,Mesa,No
+T035,C035,275.20,Purchase,Home Goods,Credit Card,2025-01-15,18:45:50,Kansas City,No
+T036,C036,38.90,Purchase,Clothing,Cash,2025-01-15,11:20:30,Atlanta,No
+T037,C037,720.50,Purchase,Electronics,Credit Card,2025-01-15,21:30:15,Omaha,No
+T038,C038,92.60,Purchase,Books,Debit Card,2025-01-15,15:50:40,Raleigh,No
+T039,C039,310.80,Purchase,Home Goods,Credit Card,2025-01-15,19:10:25,Miami,No
+T040,C040,33.45,Purchase,Clothing,Cash,2025-01-15,10:35:20,Cleveland,No
+T041,C041,850.00,Purchase,Electronics,Credit Card,2025-01-15,22:00:45,Tulsa,No
+T042,C042,115.75,Purchase,Books,Debit Card,2025-01-15,17:15:30,Oakland,No
+T043,C043,185.40,Purchase,Home Goods,Credit Card,2025-01-15,18:30:15,Minneapolis,No
+T044,C044,47.20,Purchase,Clothing,Cash,2025-01-15,12:40:25,Wichita,No
+T045,C045,950.30,Purchase,Electronics,Credit Card,2025-01-15,22:30:20,Arlington,No
+T046,C046,78.90,Purchase,Books,Debit Card,2025-01-15,16:20:35,Bakersfield,No
+T047,C047,245.60,Purchase,Home Goods,Credit Card,2025-01-15,19:25:40,New Orleans,No
+T048,C048,52.80,Purchase,Clothing,Cash,2025-01-15,13:10:15,Honolulu,No
+T049,C049,680.00,Purchase,Electronics,Credit Card,2025-01-15,21:45:30,Anaheim,No
+T050,C050,125.40,Purchase,Books,Debit Card,2025-01-15,17:30:25,Tampa,No
+T051,C051,195.20,Purchase,Home Goods,Credit Card,2025-01-15,18:40:20,Aurora,No
+T052,C052,41.60,Purchase,Clothing,Cash,2025-01-15,11:55:30,Santa Ana,No
+T053,C053,750.80,Purchase,Electronics,Credit Card,2025-01-15,22:15:45,St. Louis,No
+T054,C054,98.30,Purchase,Books,Debit Card,2025-01-15,16:45:15,Riverside,No
+T055,C055,265.40,Purchase,Home Goods,Credit Card,2025-01-15,19:35:30,Corpus Christi,No
+T056,C056,36.90,Purchase,Clothing,Cash,2025-01-15,12:15:25,Lexington,No
+T057,C057,820.50,Purchase,Electronics,Credit Card,2025-01-15,22:45:20,Pittsburgh,No
+T058,C058,108.70,Purchase,Books,Debit Card,2025-01-15,17:50:35,Anchorage,No
+T059,C059,285.60,Purchase,Home Goods,Credit Card,2025-01-15,19:50:45,Stockton,No
+T060,C060,44.20,Purchase,Clothing,Cash,2025-01-15,13:25:10,Cincinnati,No
+T061,C061,900.00,Purchase,Electronics,Credit Card,2025-01-15,23:00:30,St. Paul,No
+T062,C062,135.80,Purchase,Books,Debit Card,2025-01-15,18:20:25,Toledo,No
+T063,C063,205.40,Purchase,Home Goods,Credit Card,2025-01-15,20:10:15,Greensboro,No
+T064,C064,49.50,Purchase,Clothing,Cash,2025-01-15,14:05:20,Plano,No
+T065,C065,780.30,Purchase,Electronics,Credit Card,2025-01-15,23:15:40,Henderson,No
+T066,C066,112.60,Purchase,Books,Debit Card,2025-01-15,18:35:30,Lincoln,No
+T067,C067,225.80,Purchase,Home Goods,Credit Card,2025-01-15,20:25:25,Buffalo,No
+T068,C068,38.40,Purchase,Clothing,Cash,2025-01-15,14:20:15,Jersey City,No
+T069,C069,650.50,Purchase,Electronics,Credit Card,2025-01-15,23:30:50,Chula Vista,No
+T070,C070,95.20,Purchase,Books,Debit Card,2025-01-15,19:10:40,Fort Wayne,No
+T071,C071,175.60,Purchase,Home Goods,Credit Card,2025-01-15,21:15:35,Orlando,No
+T072,C072,42.80,Purchase,Clothing,Cash,2025-01-15,15:30:20,St. Petersburg,No
+T073,C073,720.40,Purchase,Electronics,Credit Card,2025-01-15,23:45:15,Laredo,No
+T074,C074,118.90,Purchase,Books,Debit Card,2025-01-15,19:25:30,Irving,No
+T075,C075,195.20,Purchase,Home Goods,Credit Card,2025-01-15,21:30:25,Lubbock,No
+T076,C076,46.70,Purchase,Clothing,Cash,2025-01-15,15:45:10,Madison,No
+T077,C077,580.00,Purchase,Electronics,Credit Card,2025-01-15,00:00:30,Gilbert,No
+T078,C078,102.40,Purchase,Books,Debit Card,2025-01-15,20:15:20,Glendale,No
+T079,C079,215.60,Purchase,Home Goods,Credit Card,2025-01-15,22:20:15,Reno,No
+T080,C080,51.30,Purchase,Clothing,Cash,2025-01-15,16:10:25,Hialeah,No
+T081,C081,850.20,Purchase,Electronics,Credit Card,2025-01-15,00:15:45,Garland,No
+T082,C082,128.50,Purchase,Books,Debit Card,2025-01-15,20:30:35,Chesapeake,No
+T083,C083,245.80,Purchase,Home Goods,Credit Card,2025-01-15,22:35:30,Norfolk,No
+T084,C084,39.60,Purchase,Clothing,Cash,2025-01-15,16:25:15,Fremont,No
+T085,C085,920.40,Purchase,Electronics,Credit Card,2025-01-15,00:30:20,Spokane,No
+T086,C086,135.70,Purchase,Books,Debit Card,2025-01-15,20:45:25,Baton Rouge,No
+T087,C087,185.20,Purchase,Home Goods,Credit Card,2025-01-15,22:50:20,Richmond,No
+T088,C088,43.90,Purchase,Clothing,Cash,2025-01-15,16:40:30,Des Moines,No
+T089,C089,680.50,Purchase,Electronics,Credit Card,2025-01-15,00:45:35,Birmingham,No
+T090,C090,108.80,Purchase,Books,Debit Card,2025-01-15,21:00:15,Salt Lake City,No
+T091,C091,225.40,Purchase,Home Goods,Credit Card,2025-01-15,23:05:10,Rochester,No
+T092,C092,47.20,Purchase,Clothing,Cash,2025-01-15,17:15:25,Grand Rapids,No
+T093,C093,750.60,Purchase,Electronics,Credit Card,2025-01-15,01:00:40,Richmond,No
+T094,C094,115.30,Purchase,Books,Debit Card,2025-01-15,21:15:30,Yonkers,No
+T095,C095,195.80,Purchase,Home Goods,Credit Card,2025-01-15,23:20:25,Spokane,No
+T096,C096,41.50,Purchase,Clothing,Cash,2025-01-15,17:30:20,Glendale,No
+T097,C097,820.40,Purchase,Electronics,Credit Card,2025-01-15,01:15:35,Tacoma,No
+T098,C098,125.60,Purchase,Books,Debit Card,2025-01-15,21:30:40,Huntington Beach,No
+T099,C099,265.20,Purchase,Home Goods,Credit Card,2025-01-15,23:35:35,Des Moines,No
+T100,C100,48.90,Purchase,Clothing,Cash,2025-01-15,17:45:30,Grand Prairie,No
