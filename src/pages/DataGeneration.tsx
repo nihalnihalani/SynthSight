@@ -536,6 +536,9 @@ const DataGeneration: React.FC = () => {
         recordCount: generationSettings.recordCount
       };
       
+      console.log('Synthetic request created:', syntheticRequest);
+      console.log('Request originalData length:', syntheticRequest.originalData.length);
+      
       const generatedSyntheticData = await SyntheticDataService.generateSyntheticData(syntheticRequest);
       setSyntheticData(generatedSyntheticData);
       

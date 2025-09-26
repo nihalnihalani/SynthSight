@@ -360,6 +360,14 @@ export class SyntheticDataService {
    * Generate synthetic data using LLM
    */
   static async generateSyntheticData(request: SyntheticDataRequest): Promise<any[]> {
+    console.log('generateSyntheticData called with request:', request);
+    console.log('Original data length:', request.originalData?.length);
+    
+    if (!request.originalData || request.originalData.length === 0) {
+      console.error('No original data provided to generateSyntheticData');
+      throw new Error('No original data provided for synthetic data generation');
+    }
+    
     try {
       // Create a prompt for the LLM to generate synthetic data
       const prompt = this.createSyntheticDataPrompt(request);
@@ -430,7 +438,16 @@ Return the data as a JSON array with the same column structure.`;
    * Enhanced statistical synthetic data generation
    */
   private static generateStatisticalSyntheticData(request: SyntheticDataRequest): any[] {
+    console.log('generateStatisticalSyntheticData called');
+    console.log('Original data:', request.originalData);
+    
     const originalData = request.originalData;
+    
+    if (!originalData || originalData.length === 0) {
+      console.error('No original data in generateStatisticalSyntheticData');
+      throw new Error('No original data provided for statistical synthetic data generation');
+    }
+    
     const columns = Object.keys(originalData[0]);
     const syntheticData = [];
     
