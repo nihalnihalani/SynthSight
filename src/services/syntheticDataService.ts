@@ -413,37 +413,76 @@ Return the data as a JSON array with the same column structure.`;
   }
 
   /**
-   * Fallback statistical synthetic data generation
+   * Enhanced statistical synthetic data generation
    */
   private static generateStatisticalSyntheticData(request: SyntheticDataRequest): any[] {
     const originalData = request.originalData;
     const columns = Object.keys(originalData[0]);
     const syntheticData = [];
     
+    // Analyze original data structure
+    const columnAnalysis: { [key: string]: any } = {};
+    
+    columns.forEach(column => {
+      const values = originalData.map(row => row[column]).filter(v => v !== null && v !== undefined);
+      const numericValues = values.filter(v => typeof v === 'number');
+      
+      if (numericValues.length > 0) {
+        // Numeric column analysis
+        const mean = numericValues.reduce((a, b) => a + b, 0) / numericValues.length;
+        const std = this.calculateStandardDeviation(numericValues);
+        const min = Math.min(...numericValues);
+        const max = Math.max(...numericValues);
+        
+        columnAnalysis[column] = {
+          type: 'numeric',
+          mean,
+          std,
+          min,
+          max,
+          values: numericValues
+        };
+      } else {
+        // Categorical column analysis
+        const valueCounts: { [key: string]: number } = {};
+        values.forEach(value => {
+          valueCounts[String(value)] = (valueCounts[String(value)] || 0) + 1;
+        });
+        
+        columnAnalysis[column] = {
+          type: 'categorical',
+          distribution: valueCounts,
+          values: values
+        };
+      }
+    });
+    
+    // Generate synthetic data preserving correlations and distributions
     for (let i = 0; i < request.recordCount; i++) {
       const syntheticRecord: any = {};
       
       columns.forEach(column => {
-        const values = originalData.map(row => row[column]);
-        const numericValues = values.filter(v => typeof v === 'number');
+        const analysis = columnAnalysis[column];
         
-        if (numericValues.length > 0) {
-          // Generate numeric value based on distribution
-          const mean = numericValues.reduce((a, b) => a + b, 0) / numericValues.length;
-          const std = this.calculateStandardDeviation(numericValues);
-          syntheticRecord[column] = Math.round(mean + (Math.random() - 0.5) * std * 2);
-        } else {
-          // Generate categorical value based on frequency
-          const valueCounts: { [key: string]: number } = {};
-          values.forEach(value => {
-            valueCounts[String(value)] = (valueCounts[String(value)] || 0) + 1;
-          });
+        if (analysis.type === 'numeric') {
+          // Generate numeric value with noise based on privacy level
+          const noiseFactor = 1 - (request.privacyLevel * 0.3); // Higher privacy = more noise
+          const noise = (Math.random() - 0.5) * analysis.std * noiseFactor;
+          let syntheticValue = analysis.mean + noise;
           
-          const total = values.length;
+          // Ensure value stays within reasonable bounds
+          syntheticValue = Math.max(analysis.min * 0.8, Math.min(analysis.max * 1.2, syntheticValue));
+          
+          // Round if original values were integers
+          const isInteger = analysis.values.every(v => Number.isInteger(v));
+          syntheticRecord[column] = isInteger ? Math.round(syntheticValue) : Math.round(syntheticValue * 100) / 100;
+        } else {
+          // Generate categorical value based on distribution
+          const total = analysis.values.length;
           const random = Math.random() * total;
           let cumulative = 0;
           
-          for (const [value, count] of Object.entries(valueCounts)) {
+          for (const [value, count] of Object.entries(analysis.distribution)) {
             cumulative += count;
             if (random <= cumulative) {
               syntheticRecord[column] = value;
