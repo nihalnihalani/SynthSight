@@ -1,4 +1,5 @@
 // services/syntheticDataService.ts
+import Papa from 'papaparse';
 import { callOpenAI } from '../lib/openaiAgent';
 
 export interface DataAnalysisResult {
