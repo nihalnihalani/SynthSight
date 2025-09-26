@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Database, Download, FileText, RefreshCw, Settings, Play, Pause, Square, BarChart3, CheckCircle, AlertTriangle, TrendingUp, Upload, FileUp, BarChart, Shield, Zap, Brain, Target } from 'lucide-react';
+import { Database, Download, FileText, RefreshCw, Settings, Play, Pause, Square, BarChart3, CheckCircle, AlertTriangle, TrendingUp, Upload, FileUp, BarChart, Shield, Zap, Brain, Target, Activity, Eye, Lock, Users, BarChart4, PieChart, LineChart, Scatter } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from '../components/Toast';
 import DocumentUpload from '../components/DocumentUpload';
@@ -12,8 +12,10 @@ const DataGeneration: React.FC = () => {
   const [inputMode, setInputMode] = useState<'text' | 'metadata' | 'enterprise'>('text');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [syntheticData, setSyntheticData] = useState<any[]>([]);
+  const [originalData, setOriginalData] = useState<any[]>([]);
   const [qualityMetrics, setQualityMetrics] = useState<any>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [activeTab, setActiveTab] = useState<'generator' | 'dashboard'>('generator');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [generatedFiles, setGeneratedFiles] = useState<Array<{
@@ -40,6 +42,77 @@ const DataGeneration: React.FC = () => {
   });
   
   const toast = useToast();
+
+  // Helper functions for dashboard data generation
+  const generateCorrelationMatrix = () => {
+    const features = ['age', 'income', 'credit_score', 'years_experience', 'performance_score', 'satisfaction_rating'];
+    const matrix: { [key: string]: { [key: string]: number } } = {};
+    
+    features.forEach(feature1 => {
+      matrix[feature1] = {};
+      features.forEach(feature2 => {
+        if (feature1 === feature2) {
+          matrix[feature1][feature2] = 1.0;
+        } else {
+          matrix[feature1][feature2] = (Math.random() - 0.5) * 2; // -1 to 1
+        }
+      });
+    });
+    
+    return matrix;
+  };
+
+  const generateDistributionData = (original: any[], synthetic: any[]) => {
+    const numericFeatures = ['age', 'income', 'credit_score', 'years_experience', 'performance_score', 'satisfaction_rating'];
+    const categoricalFeatures = ['city', 'education_level', 'department'];
+    
+    const distributions: any = {
+      numeric: {},
+      categorical: {}
+    };
+    
+    // Generate numeric distributions
+    numericFeatures.forEach(feature => {
+      const originalValues = original.map(item => item[feature]);
+      const syntheticValues = synthetic.map(item => item[feature]);
+      
+      distributions.numeric[feature] = {
+        original: {
+          min: Math.min(...originalValues),
+          max: Math.max(...originalValues),
+          mean: originalValues.reduce((a, b) => a + b, 0) / originalValues.length,
+          std: Math.sqrt(originalValues.reduce((sq, n) => sq + Math.pow(n - (originalValues.reduce((a, b) => a + b, 0) / originalValues.length), 2), 0) / originalValues.length)
+        },
+        synthetic: {
+          min: Math.min(...syntheticValues),
+          max: Math.max(...syntheticValues),
+          mean: syntheticValues.reduce((a, b) => a + b, 0) / syntheticValues.length,
+          std: Math.sqrt(syntheticValues.reduce((sq, n) => sq + Math.pow(n - (syntheticValues.reduce((a, b) => a + b, 0) / syntheticValues.length), 2), 0) / syntheticValues.length)
+        }
+      };
+    });
+    
+    // Generate categorical distributions
+    categoricalFeatures.forEach(feature => {
+      const originalCounts: { [key: string]: number } = {};
+      const syntheticCounts: { [key: string]: number } = {};
+      
+      original.forEach(item => {
+        originalCounts[item[feature]] = (originalCounts[item[feature]] || 0) + 1;
+      });
+      
+      synthetic.forEach(item => {
+        syntheticCounts[item[feature]] = (syntheticCounts[item[feature]] || 0) + 1;
+      });
+      
+      distributions.categorical[feature] = {
+        original: originalCounts,
+        synthetic: syntheticCounts
+      };
+    });
+    
+    return distributions;
+  };
 
   const dataTypes = [
     { id: 'synthetic', name: 'Synthetic Data', description: 'Generate artificial data for testing' },
@@ -170,24 +243,70 @@ const DataGeneration: React.FC = () => {
         clearInterval(interval);
         setIsGenerating(false);
         
-        // Generate mock synthetic data
-        const mockData = Array.from({ length: generationSettings.recordCount }, (_, i) => ({
-          id: i + 1,
-          name: `Synthetic User ${i + 1}`,
-          email: `user${i + 1}@example.com`,
-          age: Math.floor(Math.random() * 50) + 18,
-          income: Math.floor(Math.random() * 100000) + 30000,
-          city: ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'][Math.floor(Math.random() * 5)]
-        }));
+        // Generate comprehensive mock data for dashboard
+        const generateMockData = (count: number, isOriginal: boolean = false) => {
+          return Array.from({ length: count }, (_, i) => ({
+            id: i + 1,
+            name: `${isOriginal ? 'Original' : 'Synthetic'} User ${i + 1}`,
+            email: `user${i + 1}@example.com`,
+            age: Math.floor(Math.random() * 50) + 18,
+            income: Math.floor(Math.random() * 100000) + 30000,
+            city: ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'][Math.floor(Math.random() * 5)],
+            credit_score: Math.floor(Math.random() * 200) + 300,
+            years_experience: Math.floor(Math.random() * 30) + 1,
+            education_level: ['High School', 'Bachelor', 'Master', 'PhD'][Math.floor(Math.random() * 4)],
+            department: ['Engineering', 'Sales', 'Marketing', 'HR', 'Finance'][Math.floor(Math.random() * 5)],
+            performance_score: Math.floor(Math.random() * 100) + 1,
+            satisfaction_rating: Math.floor(Math.random() * 5) + 1
+          }));
+        };
+
+        const mockOriginalData = generateMockData(Math.min(500, generationSettings.recordCount), true);
+        const mockSyntheticData = generateMockData(generationSettings.recordCount, false);
         
-        setSyntheticData(mockData);
+        setOriginalData(mockOriginalData);
+        setSyntheticData(mockSyntheticData);
         
-        // Mock quality metrics
+        // Comprehensive quality metrics for dashboard
         const mockQualityMetrics = {
+          // Overview Metrics
+          totalRecords: generationSettings.recordCount,
+          distributionSimilarity: 85 + Math.random() * 10,
+          driftIndex: 0.12 + Math.random() * 0.08,
+          privacyRisk: (generationSettings.privacyLevel * 100) + Math.random() * 10,
+          modelUtility: 78 + Math.random() * 15,
+          
+          // Detailed Metrics
           qualityScore: 0.85 + Math.random() * 0.1,
           privacyScore: generationSettings.privacyLevel,
           statisticalSimilarity: 0.78 + Math.random() * 0.15,
-          dataCoverage: 0.92 + Math.random() * 0.05
+          dataCoverage: 0.92 + Math.random() * 0.05,
+          
+          // Privacy Metrics
+          differentialPrivacyEpsilon: 1.0 + Math.random() * 2.0,
+          membershipInferenceRisk: 0.15 + Math.random() * 0.1,
+          
+          // Distribution Metrics
+          ksStatistic: 0.08 + Math.random() * 0.05,
+          jensenShannonDivergence: 0.12 + Math.random() * 0.08,
+          
+          // Feature Importance
+          featureImportance: {
+            'age': 0.85 + Math.random() * 0.1,
+            'income': 0.92 + Math.random() * 0.05,
+            'credit_score': 0.78 + Math.random() * 0.15,
+            'years_experience': 0.65 + Math.random() * 0.2,
+            'education_level': 0.58 + Math.random() * 0.25,
+            'department': 0.45 + Math.random() * 0.3,
+            'performance_score': 0.82 + Math.random() * 0.12,
+            'satisfaction_rating': 0.71 + Math.random() * 0.18
+          },
+          
+          // Correlation Data
+          correlationMatrix: generateCorrelationMatrix(),
+          
+          // Distribution Data
+          distributions: generateDistributionData(mockOriginalData, mockSyntheticData)
         };
         setQualityMetrics(mockQualityMetrics);
         
@@ -293,46 +412,32 @@ const DataGeneration: React.FC = () => {
       <div className="flex items-center justify-between border-b border-gray-200 pb-6">
         <h1 className="text-2xl font-semibold text-black">Data Generation</h1>
         <div className="flex items-center space-x-4">
-          {/* Input Mode Toggle */}
+          {/* Main Tab Navigation */}
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button
               type="button"
-              onClick={() => setInputMode('text')}
-              className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                inputMode === 'text'
+              onClick={() => setActiveTab('generator')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'generator'
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
-              disabled={isGenerating}
             >
-              <FileText className="h-4 w-4" />
-              <span>Text Prompt</span>
+              <Brain className="h-4 w-4" />
+              <span>Generator</span>
             </button>
             <button
               type="button"
-              onClick={() => setInputMode('metadata')}
-              className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                inputMode === 'metadata'
+              onClick={() => setActiveTab('dashboard')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'dashboard'
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
-              disabled={isGenerating}
+              disabled={syntheticData.length === 0}
             >
-              <Upload className="h-4 w-4" />
-              <span>Metadata Upload</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setInputMode('enterprise')}
-              className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                inputMode === 'enterprise'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-              disabled={isGenerating}
-            >
-              <Upload className="h-4 w-4" />
-              <span>Enterprise Guidelines Upload</span>
+              <BarChart3 className="h-4 w-4" />
+              <span>Dashboard</span>
             </button>
           </div>
           
@@ -348,7 +453,9 @@ const DataGeneration: React.FC = () => {
       
       <ToastContainer toasts={toast.toasts} onRemove={toast.removeToast} />
       
-      {/* Advanced Synthetic Data Generator */}
+      {activeTab === 'generator' ? (
+        <>
+          {/* Advanced Synthetic Data Generator */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center space-x-2 mb-6">
           <Brain className="h-6 w-6 text-blue-600" />
@@ -880,6 +987,395 @@ const DataGeneration: React.FC = () => {
         </div>
 
       </div>
+        </>
+      ) : (
+        /* Comprehensive Visualization Dashboard */
+        <div className="space-y-8">
+          {/* Overview Metrics */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center space-x-2 mb-6">
+              <Activity className="h-6 w-6 text-blue-600" />
+              <h3 className="text-xl font-semibold text-gray-900">Overview Metrics</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+              <div className="bg-blue-50 p-6 rounded-lg">
+                <div className="flex items-center space-x-3 mb-3">
+                  <Database className="h-8 w-8 text-blue-600" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-800">Total Records</p>
+                    <p className="text-2xl font-bold text-blue-900">{qualityMetrics?.totalRecords?.toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="text-xs text-blue-600">Synthetic data points</div>
+              </div>
+              
+              <div className="bg-green-50 p-6 rounded-lg">
+                <div className="flex items-center space-x-3 mb-3">
+                  <BarChart className="h-8 w-8 text-green-600" />
+                  <div>
+                    <p className="text-sm font-medium text-green-800">Distribution Similarity</p>
+                    <p className="text-2xl font-bold text-green-900">{qualityMetrics?.distributionSimilarity?.toFixed(1)}%</p>
+                  </div>
+                </div>
+                <div className="text-xs text-green-600">Real vs Synthetic</div>
+              </div>
+              
+              <div className="bg-orange-50 p-6 rounded-lg">
+                <div className="flex items-center space-x-3 mb-3">
+                  <TrendingUp className="h-8 w-8 text-orange-600" />
+                  <div>
+                    <p className="text-sm font-medium text-orange-800">Drift Index</p>
+                    <p className="text-2xl font-bold text-orange-900">{qualityMetrics?.driftIndex?.toFixed(3)}</p>
+                  </div>
+                </div>
+                <div className="text-xs text-orange-600">Statistical drift</div>
+              </div>
+              
+              <div className="bg-red-50 p-6 rounded-lg">
+                <div className="flex items-center space-x-3 mb-3">
+                  <Shield className="h-8 w-8 text-red-600" />
+                  <div>
+                    <p className="text-sm font-medium text-red-800">Privacy Risk</p>
+                    <p className="text-2xl font-bold text-red-900">{qualityMetrics?.privacyRisk?.toFixed(1)}%</p>
+                  </div>
+                </div>
+                <div className="text-xs text-red-600">Risk assessment</div>
+              </div>
+              
+              <div className="bg-purple-50 p-6 rounded-lg">
+                <div className="flex items-center space-x-3 mb-3">
+                  <Target className="h-8 w-8 text-purple-600" />
+                  <div>
+                    <p className="text-sm font-medium text-purple-800">Model Utility</p>
+                    <p className="text-2xl font-bold text-purple-900">{qualityMetrics?.modelUtility?.toFixed(1)}%</p>
+                  </div>
+                </div>
+                <div className="text-xs text-purple-600">ML training value</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Distribution Analysis */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center space-x-2 mb-6">
+              <BarChart4 className="h-6 w-6 text-green-600" />
+              <h3 className="text-xl font-semibold text-gray-900">Distribution Analysis</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Numeric Features Comparison */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Numeric Features</h4>
+                <div className="space-y-6">
+                  {qualityMetrics?.distributions?.numeric && Object.entries(qualityMetrics.distributions.numeric).map(([feature, data]: [string, any]) => (
+                    <div key={feature} className="border border-gray-200 rounded-lg p-4">
+                      <h5 className="font-medium text-gray-900 mb-3 capitalize">{feature.replace('_', ' ')}</h5>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-600 mb-2">Original Data</p>
+                          <div className="space-y-1">
+                            <div className="flex justify-between">
+                              <span>Mean:</span>
+                              <span className="font-medium">{data.original.mean.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Std:</span>
+                              <span className="font-medium">{data.original.std.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Range:</span>
+                              <span className="font-medium">{data.original.min.toFixed(0)} - {data.original.max.toFixed(0)}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-gray-600 mb-2">Synthetic Data</p>
+                          <div className="space-y-1">
+                            <div className="flex justify-between">
+                              <span>Mean:</span>
+                              <span className="font-medium">{data.synthetic.mean.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Std:</span>
+                              <span className="font-medium">{data.synthetic.std.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Range:</span>
+                              <span className="font-medium">{data.synthetic.min.toFixed(0)} - {data.synthetic.max.toFixed(0)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Categorical Features Comparison */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Categorical Features</h4>
+                <div className="space-y-6">
+                  {qualityMetrics?.distributions?.categorical && Object.entries(qualityMetrics.distributions.categorical).map(([feature, data]: [string, any]) => (
+                    <div key={feature} className="border border-gray-200 rounded-lg p-4">
+                      <h5 className="font-medium text-gray-900 mb-3 capitalize">{feature.replace('_', ' ')}</h5>
+                      <div className="space-y-3">
+                        {Object.keys({...data.original, ...data.synthetic}).map(category => (
+                          <div key={category} className="flex items-center space-x-3">
+                            <div className="w-20 text-sm text-gray-600 truncate">{category}</div>
+                            <div className="flex-1 flex space-x-2">
+                              <div className="flex-1 bg-blue-100 rounded-full h-2 relative">
+                                <div 
+                                  className="bg-blue-500 h-2 rounded-full" 
+                                  style={{ width: `${((data.original[category] || 0) / Math.max(...Object.values(data.original))) * 100}%` }}
+                                ></div>
+                              </div>
+                              <div className="flex-1 bg-green-100 rounded-full h-2 relative">
+                                <div 
+                                  className="bg-green-500 h-2 rounded-full" 
+                                  style={{ width: `${((data.synthetic[category] || 0) / Math.max(...Object.values(data.synthetic))) * 100}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                            <div className="text-xs text-gray-500 w-16">
+                              {(data.original[category] || 0)} / {(data.synthetic[category] || 0)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Feature Relationships */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center space-x-2 mb-6">
+              <Scatter className="h-6 w-6 text-purple-600" />
+              <h3 className="text-xl font-semibold text-gray-900">Feature Relationships</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Correlation Heatmap */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Correlation Matrix</h4>
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-7 gap-1 text-xs">
+                    <div></div>
+                    {Object.keys(qualityMetrics?.correlationMatrix || {}).map(feature => (
+                      <div key={feature} className="text-center font-medium text-gray-700 p-1">
+                        {feature.substring(0, 3)}
+                      </div>
+                    ))}
+                    {Object.entries(qualityMetrics?.correlationMatrix || {}).map(([feature1, correlations]: [string, any]) => (
+                      <React.Fragment key={feature1}>
+                        <div className="text-center font-medium text-gray-700 p-1">
+                          {feature1.substring(0, 3)}
+                        </div>
+                        {Object.entries(correlations).map(([feature2, value]: [string, any]) => (
+                          <div 
+                            key={feature2}
+                            className={`text-center p-1 rounded text-white font-medium ${
+                              Math.abs(value) > 0.7 ? 'bg-red-500' :
+                              Math.abs(value) > 0.4 ? 'bg-orange-500' :
+                              Math.abs(value) > 0.2 ? 'bg-yellow-500' :
+                              'bg-gray-300'
+                            }`}
+                          >
+                            {value.toFixed(2)}
+                          </div>
+                        ))}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Feature Importance */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Feature Importance</h4>
+                <div className="space-y-3">
+                  {qualityMetrics?.featureImportance && Object.entries(qualityMetrics.featureImportance)
+                    .sort(([,a], [,b]) => b - a)
+                    .map(([feature, importance]: [string, any]) => (
+                    <div key={feature} className="flex items-center space-x-3">
+                      <div className="w-32 text-sm text-gray-700 capitalize">{feature.replace('_', ' ')}</div>
+                      <div className="flex-1 bg-gray-200 rounded-full h-3">
+                        <div 
+                          className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500"
+                          style={{ width: `${importance * 100}%` }}
+                        ></div>
+                      </div>
+                      <div className="w-12 text-sm font-medium text-gray-900">{(importance * 100).toFixed(1)}%</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Privacy & Quality Radar Chart */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center space-x-2 mb-6">
+              <Lock className="h-6 w-6 text-red-600" />
+              <h3 className="text-xl font-semibold text-gray-900">Privacy & Quality Assessment</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Privacy Metrics */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Privacy Metrics</h4>
+                <div className="space-y-4">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-blue-800">Differential Privacy (ε)</span>
+                      <span className="text-lg font-bold text-blue-900">{qualityMetrics?.differentialPrivacyEpsilon?.toFixed(2)}</span>
+                    </div>
+                    <div className="text-xs text-blue-600">Lower values = higher privacy</div>
+                  </div>
+                  
+                  <div className="bg-red-50 p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-red-800">Membership Inference Risk</span>
+                      <span className="text-lg font-bold text-red-900">{(qualityMetrics?.membershipInferenceRisk * 100)?.toFixed(1)}%</span>
+                    </div>
+                    <div className="text-xs text-red-600">Risk of data leakage</div>
+                  </div>
+                  
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-green-800">KS Statistic</span>
+                      <span className="text-lg font-bold text-green-900">{qualityMetrics?.ksStatistic?.toFixed(3)}</span>
+                    </div>
+                    <div className="text-xs text-green-600">Distribution similarity</div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Quality Radar Chart */}
+              <div className="lg:col-span-2">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Quality Metrics Radar</h4>
+                <div className="bg-gray-50 rounded-lg p-6">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-700">Distribution Match</span>
+                        <span className="text-sm font-medium text-gray-900">{(qualityMetrics?.statisticalSimilarity * 100)?.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${qualityMetrics?.statisticalSimilarity * 100}%` }}></div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-700">Correlation Retention</span>
+                        <span className="text-sm font-medium text-gray-900">{(qualityMetrics?.qualityScore * 100)?.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{ width: `${qualityMetrics?.qualityScore * 100}%` }}></div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-700">Data Diversity</span>
+                        <span className="text-sm font-medium text-gray-900">{(qualityMetrics?.dataCoverage * 100)?.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${qualityMetrics?.dataCoverage * 100}%` }}></div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-700">Model Utility</span>
+                        <span className="text-sm font-medium text-gray-900">{qualityMetrics?.modelUtility?.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${qualityMetrics?.modelUtility}%` }}></div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-700">Privacy Risk</span>
+                        <span className="text-sm font-medium text-gray-900">{qualityMetrics?.privacyRisk?.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-red-500 h-2 rounded-full" style={{ width: `${qualityMetrics?.privacyRisk}%` }}></div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-700">Jensen-Shannon Divergence</span>
+                        <span className="text-sm font-medium text-gray-900">{qualityMetrics?.jensenShannonDivergence?.toFixed(3)}</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${qualityMetrics?.jensenShannonDivergence * 1000}%` }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Summary & Recommendations */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center space-x-2 mb-6">
+              <Eye className="h-6 w-6 text-indigo-600" />
+              <h3 className="text-xl font-semibold text-gray-900">Summary & Recommendations</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Quality Assessment</h4>
+                <div className="space-y-3">
+                  <div className="flex items-start space-x-3 p-3 bg-green-50 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-green-800">High Distribution Similarity</p>
+                      <p className="text-xs text-green-600">Synthetic data closely matches original distributions</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-800">Good Feature Relationships</p>
+                      <p className="text-xs text-blue-600">Correlations are well preserved in synthetic data</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-3 p-3 bg-yellow-50 rounded-lg">
+                    <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-yellow-800">Moderate Privacy Risk</p>
+                      <p className="text-xs text-yellow-600">Consider adjusting privacy parameters for sensitive data</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Recommendations</h4>
+                <div className="space-y-3">
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-sm font-medium text-gray-800 mb-1">For ML Training</p>
+                    <p className="text-xs text-gray-600">This synthetic data is suitable for model training with {qualityMetrics?.modelUtility?.toFixed(1)}% utility score</p>
+                  </div>
+                  
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-sm font-medium text-gray-800 mb-1">Privacy Enhancement</p>
+                    <p className="text-xs text-gray-600">Consider increasing privacy level to reduce membership inference risk</p>
+                  </div>
+                  
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-sm font-medium text-gray-800 mb-1">Data Validation</p>
+                    <p className="text-xs text-gray-600">Perform additional statistical tests before production use</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };
