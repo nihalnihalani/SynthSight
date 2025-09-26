@@ -9,6 +9,7 @@ import AuditLogs from './pages/AuditLogs';
 import Violations from './pages/Violations';
 import Settings from './pages/Settings';
 import { DocumentProvider } from './contexts/DocumentContext';
+import { DataProvider } from './contexts/DataContext';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -38,7 +39,8 @@ function App() {
 
   return (
     <DocumentProvider>
-      <div className="flex flex-col h-screen bg-white">
+      <DataProvider>
+        <div className="flex flex-col h-screen bg-white">
         
         <div className="flex flex-1 overflow-hidden">
         <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
@@ -56,8 +58,9 @@ function App() {
             </motion.div>
           </AnimatePresence>
         </main>
-        </div>
       </div>
+    </div>
+      </DataProvider>
     </DocumentProvider>
   );
 }

@@ -1,247 +1,285 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, FileText, Download, Trash2, BarChart3, CheckCircle, AlertTriangle, RefreshCw, ScrollText, Eye, EyeOff } from 'lucide-react';
+import { TrendingUp, FileText, Trash2, BarChart3, CheckCircle, AlertTriangle, RefreshCw, EyeOff, Upload, Shield, X } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from '../components/Toast';
-import { landingAIService, LandingAIResponse } from '../services/landingAIService';
 import { useDocumentContext, ExtractedDocument } from '../contexts/DocumentContext';
+import { useDataContext, DataEvaluationResult as ContextDataEvaluationResult } from '../contexts/DataContext';
+import { companyGuidelinesService, CompanyGuideline } from '../services/companyGuidelinesService';
+import { perplexityService } from '../services/perplexityService';
+import IntelligentDashboard from '../components/IntelligentDashboard';
+import AdvancedDashboard from '../components/AdvancedDashboard';
+import Interactive3DDashboard from '../components/Interactive3DDashboard';
+import CyberpunkDashboard from '../components/CyberpunkDashboard';
 
 const DataEvaluation: React.FC = () => {
-  const { extractedDocuments, removeDocument, updateDocument, addDocument } = useDocumentContext();
-  const [evaluationResults, setEvaluationResults] = useState<Array<{
+  const { extractedDocuments, addDocument } = useDocumentContext();
+  const { 
+    evaluationResults,
+    addEvaluationResult,
+    removeEvaluationResult
+  } = useDataContext();
+  const [isUploadingGuidelines, setIsUploadingGuidelines] = useState(false);
+  const [isEvaluatingData, setIsEvaluatingData] = useState(false);
+  const [isUploadingData, setIsUploadingData] = useState(false);
+  const [enterpriseGuidelines, setEnterpriseGuidelines] = useState<CompanyGuideline[]>([]);
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [dashboardType, setDashboardType] = useState<'basic' | 'advanced' | '3d' | 'cyberpunk'>('basic');
+  const [dragActive, setDragActive] = useState(false);
+  const [uploadedDataFiles, setUploadedDataFiles] = useState<Array<{
     id: string;
-    fileName: string;
-    qualityScore: number;
-    gdprCompliance: number;
-    dataIntegrity: number;
-    completeness: number;
-    accuracy: number;
-    timestamp: Date;
-    status: 'evaluating' | 'completed' | 'error';
-    issues: Array<{
-      type: 'warning' | 'error' | 'info';
-      message: string;
-      severity: 'low' | 'medium' | 'high';
-    }>;
+    name: string;
+    type: string;
+    size: number;
+    uploadDate: Date;
+    content: any;
+    preview?: string;
   }>>([]);
-  const [isEvaluating, setIsEvaluating] = useState(false);
-  const [isExtracting, setIsExtracting] = useState(false);
+  const [selectedDataFile, setSelectedDataFile] = useState<{
+    id: string;
+    name: string;
+    type: string;
+    size: number;
+    uploadDate: Date;
+    content: any;
+    preview?: string;
+  } | null>(null);
   const toast = useToast();
 
   // Documents are now managed by the DocumentContext
   // Add some sample documents for demonstration
   useEffect(() => {
     if (extractedDocuments.length === 0) {
+      // Add sample documents for demonstration
       const sampleDocuments: ExtractedDocument[] = [
         {
           id: 'sample-1',
-          fileName: 'Synthetic Data Enterprise Toolkit.pdf',
+          fileName: 'Sample Enterprise Guidelines.pdf',
           uploadDate: new Date(),
-          content: 'This enterprise guidelines document begins with an enterprise profile (SynthData Inc.) and positions synthetic data as a strategic asset, not just governance. The toolkit covers comprehensive data governance policies and procedures with a focus on synthetic data generation and management. It establishes clear frameworks for data classification, access controls, retention policies, and compliance monitoring. Key applications include training data augmentation, rare-event simulation, privacy-safe sharing, and industry-specific use cases across healthcare, finance, and autonomous systems. The document reviews both commercial platforms (Gretel, MOSTLY AI, K2View) and open-source tools (SDV, Synthea, Faker) for synthetic data generation. The evaluation framework emphasizes three critical lenses: fidelity (statistical accuracy), utility (business value), and privacy validation (differential privacy compliance). Workflow integration covers embedding synthetic data processes in CI/CD pipelines, monitoring data drift, and securing data pipelines throughout the lifecycle. Risk mitigation strategies include differential privacy implementation, bias detection algorithms, granular access controls, and comprehensive audit logging. The document balances governance requirements with practical implementation guidance, reflecting the toolkit\'s broader scope beyond traditional data governance to encompass strategic synthetic data initiatives.',
-          summary: 'This enterprise guidelines document begins with an enterprise profile (SynthData Inc.) and positions synthetic data as a strategic asset, not just governance. The toolkit covers comprehensive data governance policies and procedures with a focus on synthetic data generation and management. It establishes clear frameworks for data classification, access controls, retention policies, and compliance monitoring. Key applications include training data augmentation, rare-event simulation, privacy-safe sharing, and industry-specific use cases across healthcare, finance, and autonomous systems. The document reviews both commercial platforms (Gretel, MOSTLY AI, K2View) and open-source tools (SDV, Synthea, Faker) for synthetic data generation. The evaluation framework emphasizes three critical lenses: fidelity (statistical accuracy), utility (business value), and privacy validation (differential privacy compliance). Workflow integration covers embedding synthetic data processes in CI/CD pipelines, monitoring data drift, and securing data pipelines throughout the lifecycle. Risk mitigation strategies include differential privacy implementation, bias detection algorithms, granular access controls, and comprehensive audit logging. The document balances governance requirements with practical implementation guidance, reflecting the toolkit\'s broader scope beyond traditional data governance to encompass strategic synthetic data initiatives.',
+          content: 'This is a sample enterprise guidelines document...',
+          summary: 'Sample enterprise guidelines for data governance and compliance.',
           metadata: {
-            title: 'Synthetic Data Enterprise Toolkit',
-            author: 'Data Governance Team',
-            pages: 8,
-            wordCount: 1850,
+            title: 'Sample Enterprise Guidelines',
+            author: 'Sample Author',
+            pages: 10,
+            wordCount: 5000,
             extractedAt: new Date().toISOString()
           },
           entities: [
-            { type: 'email', value: 'governance@company.com', confidence: 0.9 },
-            { type: 'phone', value: '+1-555-0123', confidence: 0.8 },
-            { type: 'person', value: 'Data Protection Officer', confidence: 0.7 },
-            { type: 'organization', value: 'Data Governance Team', confidence: 0.8 }
+            { type: 'ORGANIZATION', value: 'Sample Corp', confidence: 0.95 },
+            { type: 'PERSON', value: 'John Doe', confidence: 0.88 }
           ],
-          topics: ['enterprise', 'governance', 'synthetic data', 'compliance', 'data protection', 'policies', 'CI/CD', 'differential privacy', 'bias detection', 'audit logging', 'workflow integration'],
-          isExpanded: false
-        },
-        {
-          id: 'sample-2',
-          fileName: 'data_governance_guidelines.docx',
-          uploadDate: new Date(Date.now() - 86400000), // 1 day ago
-          content: 'Our data governance framework establishes clear policies and procedures for managing enterprise data assets. This includes data classification, retention policies, access controls, and quality standards. All data handling activities must comply with industry regulations and internal policies, with regular monitoring and reporting to ensure adherence to established guidelines.',
-          summary: 'Comprehensive data governance guidelines covering classification, retention, access controls, and quality standards.',
-          metadata: {
-            title: 'Data Governance Guidelines',
-            author: 'IT Governance Team',
-            pages: 12,
-            wordCount: 2100,
-            extractedAt: new Date(Date.now() - 86400000).toISOString()
-          },
-          entities: [
-            { type: 'email', value: 'governance@company.com', confidence: 0.9 },
-            { type: 'person', value: 'Chief Data Officer', confidence: 0.8 }
-          ],
-          topics: ['governance', 'data management', 'compliance', 'policies'],
+          topics: ['data governance', 'compliance', 'enterprise'],
           isExpanded: false
         }
       ];
       
-      sampleDocuments.forEach(doc => {
-        // Only add if not already present
-        if (!extractedDocuments.find(d => d.id === doc.id)) {
-          addDocument(doc);
-        }
-      });
+      sampleDocuments.forEach(doc => addDocument(doc));
     }
   }, [extractedDocuments.length, addDocument]);
 
-  const handleExtractDocument = async (file: File) => {
-    setIsExtracting(true);
-    
-    try {
-      const result: LandingAIResponse = await landingAIService.extractDocumentContent(file);
-      
-      if (result.success && result.data) {
-        const newDocument = {
-          id: Math.random().toString(36).substr(2, 9),
-          fileName: file.name,
-          uploadDate: new Date(),
-          content: result.data.content,
-          summary: result.data.summary,
-          metadata: result.data.metadata,
-          entities: result.data.entities || [],
-          topics: result.data.topics || [],
-          isExpanded: false
-        };
-        
-        setExtractedDocuments(prev => [newDocument, ...prev]);
-        toast.success('Document Extracted', `Content extracted from ${file.name}`);
-      } else {
-        toast.error('Extraction Failed', result.error || 'Failed to extract document content');
-      }
-    } catch (error) {
-      console.error('Document extraction error:', error);
-      toast.error('Extraction Failed', 'Failed to extract document content');
-    } finally {
-      setIsExtracting(false);
-    }
+  const readFileAsText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target?.result as string || '');
+      reader.onerror = (e) => reject(e);
+      reader.readAsText(file);
+    });
   };
 
-  const toggleDocumentExpansion = (documentId: string) => {
-    const document = extractedDocuments.find(doc => doc.id === documentId);
-    if (document) {
-      updateDocument(documentId, { isExpanded: !document.isExpanded });
-    }
-  };
-
-  const handleEvaluateDocument = async (documentId: string) => {
-    const document = extractedDocuments.find(d => d.id === documentId);
-    if (!document) return;
-
-    setIsEvaluating(true);
-    
-    const evaluationId = Math.random().toString(36).substr(2, 9);
-    const newEvaluation = {
-      id: evaluationId,
-      fileName: document.fileName,
-      qualityScore: 0,
-      gdprCompliance: 0,
-      dataIntegrity: 0,
-      completeness: 0,
-      accuracy: 0,
-      timestamp: new Date(),
-      status: 'evaluating' as const,
-      issues: []
-    };
-    
-    setEvaluationResults(prev => [newEvaluation, ...prev]);
-    
-    // Simulate evaluation progress
-    const interval = setInterval(() => {
-      setEvaluationResults(prev => 
-        prev.map(evaluation => {
-          if (evaluation.id === evaluationId) {
-            const progress = Math.min(100, (evaluation.qualityScore || 0) + Math.random() * 15);
-            const qualityScore = Math.round(progress);
-            const gdprCompliance = Math.round(progress * 0.9 + Math.random() * 10);
-            const dataIntegrity = Math.round(progress * 0.85 + Math.random() * 15);
-            const completeness = Math.round(progress * 0.95 + Math.random() * 5);
-            const accuracy = Math.round(progress * 0.88 + Math.random() * 12);
-            
-            if (progress >= 100) {
-              clearInterval(interval);
-              setIsEvaluating(false);
-              
-              toast.success('Evaluation Complete', 'Document evaluation completed successfully');
-              
-              // Generate mock issues
-              const issues = [];
-              if (qualityScore < 80) {
-                issues.push({
-                  type: 'warning' as const,
-                  message: 'Data quality score is below recommended threshold',
-                  severity: 'medium' as const
-                });
-              }
-              if (gdprCompliance < 85) {
-                issues.push({
-                  type: 'error' as const,
-                  message: 'GDPR compliance issues detected',
-                  severity: 'high' as const
-                });
-              }
-              if (completeness < 90) {
-                issues.push({
-                  type: 'warning' as const,
-                  message: 'Data completeness could be improved',
-                  severity: 'low' as const
-                });
-              }
-              
-              return {
-                ...evaluation,
-                qualityScore,
-                gdprCompliance,
-                dataIntegrity,
-                completeness,
-                accuracy,
-                status: 'completed' as const,
-                issues
-              };
-            }
-            
-            return {
-              ...evaluation,
-              qualityScore,
-              gdprCompliance,
-              dataIntegrity,
-              completeness,
-              accuracy
-            };
-          }
-          return evaluation;
-        })
-      );
-    }, 300);
-  };
-
-  const handleDeleteDocument = (documentId: string) => {
-    const document = extractedDocuments.find(d => d.id === documentId);
-    removeDocument(documentId);
-    setEvaluationResults(prev => prev.filter(e => e.fileName !== document?.fileName));
-    toast.success('Document Deleted', 'Document and its evaluations removed');
-  };
 
   const handleDeleteEvaluation = (evaluationId: string) => {
-    setEvaluationResults(prev => prev.filter(e => e.id !== evaluationId));
-    toast.success('Evaluation Deleted', 'Evaluation result removed');
+    removeEvaluationResult(evaluationId);
+    toast.info('Evaluation Deleted', 'Evaluation result removed');
+  };
+
+  const handleGuidelinesUpload = async (files: FileList) => {
+    if (!files || files.length === 0) return;
+    
+    setIsUploadingGuidelines(true);
+    toast.info('Processing Guidelines', 'Extracting content and generating summary...');
+    
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const guideline = await companyGuidelinesService.processCompanyGuidelines(file);
+        setEnterpriseGuidelines(prev => [guideline, ...prev]);
+      }
+      
+      toast.success('Guidelines Processed', 'Enterprise guidelines uploaded and processed successfully');
+    } catch (error) {
+      console.error('Error processing guidelines:', error);
+      toast.error('Processing Failed', 'Failed to process enterprise guidelines');
+    } finally {
+      setIsUploadingGuidelines(false);
+    }
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleGuidelinesUpload(e.dataTransfer.files);
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      handleGuidelinesUpload(e.target.files);
+    }
+  };
+
+  const handleDataFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    setIsUploadingData(true);
+    toast.info('Processing Data Files', 'Uploading and processing data files...');
+    
+    try {
+      const newFiles: Array<{
+        id: string;
+        name: string;
+        type: string;
+        size: number;
+        uploadDate: Date;
+        content: any;
+        preview?: string;
+      }> = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const content = await readFileAsText(file);
+        
+        const dataFile = {
+          id: Math.random().toString(36).substr(2, 9),
+          name: file.name,
+          type: file.type || 'application/octet-stream',
+          size: file.size,
+          uploadDate: new Date(),
+          content: content,
+          preview: content.substring(0, 200) + (content.length > 200 ? '...' : '')
+        };
+        
+        newFiles.push(dataFile);
+      }
+      
+      setUploadedDataFiles(prev => [...newFiles, ...prev]);
+      
+      if (newFiles.length === 1) {
+        setSelectedDataFile(newFiles[0]);
+      }
+      
+      toast.success('Data Files Uploaded', `${newFiles.length} data file(s) uploaded successfully`);
+    } catch (error) {
+      console.error('Error processing data files:', error);
+      toast.error('Upload Failed', 'Failed to process data files');
+    } finally {
+      setIsUploadingData(false);
+    }
+  };
+
+  const handleDeleteDataFile = (fileId: string) => {
+    setUploadedDataFiles(prev => prev.filter(file => file.id !== fileId));
+    if (selectedDataFile?.id === fileId) {
+      setSelectedDataFile(null);
+    }
+    toast.info('File Deleted', 'Data file removed');
+  };
+
+  const handleEvaluateDatasetAgainstGuidelines = async (guidelineId: string) => {
+    console.log('Evaluation triggered with guidelineId:', guidelineId);
+    console.log('Selected data file:', selectedDataFile);
+    
+    if (!selectedDataFile) {
+      toast.error('No Data File Selected', 'Please upload and select a data file first');
+      return;
+    }
+
+    setIsEvaluatingData(true);
+    
+    try {
+      toast.info('Starting Evaluation', 'Analyzing dataset against enterprise guidelines and GDPR...');
+
+      // Get GDPR analysis using Perplexity API
+      let gdprAnalysis = null;
+      try {
+        const datasetContent = selectedDataFile.content;
+        gdprAnalysis = await perplexityService.analyzeGDPRCompliance(datasetContent);
+      } catch (error) {
+        console.warn('GDPR analysis failed, using default:', error);
+        gdprAnalysis = {
+          overallComplianceScore: 85,
+          violations: [],
+          summary: 'GDPR analysis not available'
+        };
+      }
+
+      // Comprehensive evaluation using the new method
+      const evaluationResult = await companyGuidelinesService.evaluateDatasetAgainstGuidelines(
+        selectedDataFile.content,
+        guidelineId,
+        gdprAnalysis
+      );
+
+      // Create evaluation result for context
+      const contextResult: ContextDataEvaluationResult = {
+        id: Math.random().toString(36).substr(2, 9),
+        datasetId: selectedDataFile.id,
+        guidelineId: guidelineId,
+        timestamp: new Date(),
+        overallComplianceScore: evaluationResult.overallComplianceScore,
+        gdprComplianceScore: evaluationResult.gdprComplianceScore,
+        enterpriseComplianceScore: evaluationResult.enterpriseComplianceScore,
+        dataQualityScore: evaluationResult.dataQualityScore,
+        anomalies: evaluationResult.anomalies,
+        violations: evaluationResult.violations,
+        recommendations: evaluationResult.recommendations,
+        status: 'completed',
+        riskLevel: evaluationResult.riskLevel,
+        fileName: selectedDataFile.name
+      };
+
+      addEvaluationResult(contextResult);
+      setShowDashboard(true);
+      
+      toast.success('Evaluation Complete', `Dataset evaluated with ${evaluationResult.overallComplianceScore}% compliance score`);
+      
+      if (evaluationResult.riskLevel === 'critical' || evaluationResult.riskLevel === 'high') {
+        toast.warning('High Risk Detected', `${evaluationResult.violations.length} violations and ${evaluationResult.anomalies.length} anomalies found`);
+      }
+    } catch (error) {
+      console.error('Error evaluating data:', error);
+      toast.error('Evaluation Failed', 'Failed to evaluate data against enterprise guidelines');
+    } finally {
+      setIsEvaluatingData(false);
+    }
   };
 
   const getOverallStats = () => {
     const completedEvaluations = evaluationResults.filter(e => e.status === 'completed');
-    if (completedEvaluations.length === 0) return null;
-
-    const avgQuality = completedEvaluations.reduce((sum, e) => sum + e.qualityScore, 0) / completedEvaluations.length;
-    const avgGDPR = completedEvaluations.reduce((sum, e) => sum + e.gdprCompliance, 0) / completedEvaluations.length;
-    const totalIssues = completedEvaluations.reduce((sum, e) => sum + e.issues.length, 0);
-
+    const totalEvaluations = evaluationResults.length;
+    const averageScore = completedEvaluations.length > 0 
+      ? Math.round(completedEvaluations.reduce((sum, e) => sum + e.overallComplianceScore, 0) / completedEvaluations.length)
+      : 0;
+    
     return {
-      totalDocuments: extractedDocuments.length,
-      evaluatedDocuments: completedEvaluations.length,
-      avgQuality: Math.round(avgQuality),
-      avgGDPR: Math.round(avgGDPR),
-      totalIssues
+      totalEvaluations,
+      completedEvaluations: completedEvaluations.length,
+      averageScore,
+      highRiskCount: completedEvaluations.filter(e => e.riskLevel === 'high' || e.riskLevel === 'critical').length
     };
   };
 
@@ -251,288 +289,473 @@ const DataEvaluation: React.FC = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="p-8 space-y-8 bg-white min-h-screen"
+      exit={{ opacity: 0 }}
+      className="p-6 space-y-6"
     >
-      <div className="flex items-center justify-between border-b border-gray-200 pb-6">
-        <h1 className="text-2xl font-semibold text-black">Data Evaluation</h1>
+      <ToastContainer toasts={[]} onRemove={() => {}} />
+      
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <TrendingUp className="h-8 w-8 text-blue-600" />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Data Evaluation</h1>
+            <p className="text-gray-600">Upload and evaluate data against enterprise guidelines and GDPR compliance</p>
+          </div>
+        </div>
+        
         <div className="flex items-center space-x-4">
-          <button
-            className="flex items-center space-x-2 px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            title="Refresh data"
-          >
-            <RefreshCw className="h-4 w-4" />
-            <span>Refresh</span>
-          </button>
+          <div className="text-right">
+            <div className="text-sm text-gray-500">Total Evaluations</div>
+            <div className="text-2xl font-bold text-gray-900">{stats.totalEvaluations}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-sm text-gray-500">Average Score</div>
+            <div className="text-2xl font-bold text-green-600">{stats.averageScore}%</div>
+          </div>
         </div>
       </div>
-      
-      <ToastContainer toasts={toast.toasts} onRemove={toast.removeToast} />
-      
-      {/* Overall Stats */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center space-x-3">
-              <FileText className="h-8 w-8 text-blue-600" />
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Documents</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalDocuments}</p>
+
+      {/* Data Upload for Evaluation */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center space-x-2 mb-6">
+          <FileText className="h-5 w-5 text-gray-600" />
+          <h2 className="text-lg font-semibold text-gray-900">Upload Data for Evaluation</h2>
+        </div>
+        
+        <div
+          className={`relative border-2 border-dashed rounded-lg p-8 transition-colors ${
+            dragActive
+              ? 'border-blue-400 bg-blue-50'
+              : 'border-gray-300 hover:border-gray-400'
+          }`}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+        >
+          <input
+            type="file"
+            multiple
+            accept=".csv,.json,.xlsx,.xls,.txt"
+            onChange={handleDataFileInputChange}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          />
+          
+          <div className="text-center">
+            <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <div className="text-lg font-medium text-gray-900 mb-2">
+              {dragActive ? 'Drop your data files here' : 'Click to upload data files for evaluation'}
             </div>
+            <div className="text-sm text-gray-500">
+              CSV, JSON, Excel, or TXT files (max 10MB each)
             </div>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center space-x-3">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-            <div>
-              <p className="text-sm font-medium text-gray-600">Evaluated</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.evaluatedDocuments}</p>
-            </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center space-x-3">
-              <BarChart3 className="h-8 w-8 text-purple-600" />
-              <div>
-                <p className="text-sm font-medium text-gray-600">Avg Quality</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.avgQuality}%</p>
+            {isUploadingData && (
+              <div className="mt-4">
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p className="text-sm text-gray-600 mt-2">Processing data files...</p>
               </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center space-x-3">
-              <AlertTriangle className="h-8 w-8 text-orange-600" />
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Issues</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalIssues}</p>
-              </div>
-            </div>
+            )}
           </div>
         </div>
-      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Extracted Documents Content Summary */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center space-x-2 mb-6">
-            <ScrollText className="h-5 w-5 text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Document Content Summary</h2>
-          </div>
-          
-          {extractedDocuments.length === 0 ? (
-            <div className="text-center py-8">
-              <ScrollText className="h-8 w-8 text-gray-300 mx-auto mb-3" />
-              <h3 className="text-sm font-medium text-gray-900 mb-1">No documents extracted</h3>
-              <p className="text-xs text-gray-500">Documents from Live Monitor will appear here after extraction</p>
-            </div>
-          ) : (
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {extractedDocuments.map((document) => (
-                <div key={document.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
+        {/* Uploaded Data Files List */}
+        {uploadedDataFiles.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-md font-semibold text-gray-900 mb-4">Uploaded Data Files</h3>
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {uploadedDataFiles.map((file) => (
+                <div 
+                  key={file.id} 
+                  className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                    selectedDataFile?.id === file.id 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => {
+                    console.log('Selecting data file:', file);
+                    setSelectedDataFile(file);
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-3">
                       <FileText className="h-5 w-5 text-gray-400" />
                       <div>
-                        <div className="font-medium text-gray-900 text-sm">{document.fileName}</div>
+                        <div className="font-medium text-gray-900 text-sm">{file.name}</div>
                         <div className="text-xs text-gray-500">
-                          {document.metadata.wordCount} words • {document.uploadDate.toLocaleString()}
+                          {file.type} • {file.size} bytes • {file.uploadDate.toLocaleString()}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
+                      {selectedDataFile?.id === file.id && (
+                        <CheckCircle className="h-5 w-5 text-blue-600" />
+                      )}
                       <button
-                        onClick={() => handleEvaluateDocument(document.id)}
-                        className="p-2 text-gray-400 hover:text-green-600 transition-colors"
-                        title="Evaluate document"
-                        disabled={isEvaluating}
-                      >
-                        <TrendingUp className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => toggleDocumentExpansion(document.id)}
-                        className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                        title={document.isExpanded ? "Collapse" : "Expand"}
-                      >
-                        {document.isExpanded ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                      <button
-                        onClick={() => handleDeleteDocument(document.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                        title="Delete document"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteDataFile(file.id);
+                        }}
+                        className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                        title="Delete file"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
                   
-                  {/* Summary */}
-                  <div className="mb-3">
-                    <div className="text-sm font-medium text-gray-700 mb-1">Summary:</div>
-                    <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                      {document.summary}
-                    </div>
-                  </div>
-                  
-                  {/* Topics */}
-                  {document.topics.length > 0 && (
-                    <div className="mb-3">
-                      <div className="text-sm font-medium text-gray-700 mb-1">Topics:</div>
-                      <div className="flex flex-wrap gap-1">
-                        {document.topics.map((topic, index) => (
-                          <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                            {topic}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Entities */}
-                  {document.entities.length > 0 && (
-                    <div className="mb-3">
-                      <div className="text-sm font-medium text-gray-700 mb-1">Entities:</div>
-                      <div className="flex flex-wrap gap-1">
-                        {document.entities.slice(0, 5).map((entity, index) => (
-                          <span key={index} className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
-                            {entity.type}: {entity.value}
-                          </span>
-                        ))}
-                        {document.entities.length > 5 && (
-                          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-                            +{document.entities.length - 5} more
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Expanded Content */}
-                  {document.isExpanded && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <div className="text-sm font-medium text-gray-700 mb-2">Full Content:</div>
-                      <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded max-h-40 overflow-y-auto">
-                        {document.content}
+                  {file.preview && (
+                    <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded mt-2">
+                      <div className="font-medium mb-1">Preview:</div>
+                      <div className="max-h-20 overflow-y-auto">
+                        {file.preview}
                       </div>
                     </div>
                   )}
                 </div>
               ))}
             </div>
-          )}
-        </div>
-
-        {/* Evaluation Results */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center space-x-2 mb-6">
-            <BarChart3 className="h-5 w-5 text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Evaluation Results</h2>
+            
+            {/* Evaluation Button */}
+            {selectedDataFile && enterpriseGuidelines.length > 0 && (
+              <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-green-800">
+                      Ready to Evaluate
+                    </div>
+                    <div className="text-xs text-green-600">
+                      Selected: {selectedDataFile.name} • {enterpriseGuidelines.length} guideline(s) available
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleEvaluateDatasetAgainstGuidelines(enterpriseGuidelines[0].id)}
+                    className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isEvaluatingData}
+                  >
+                    {isEvaluatingData ? 'Evaluating...' : 'Start Evaluation'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-          
-          {evaluationResults.length === 0 ? (
-            <div className="text-center py-8">
-              <BarChart3 className="h-8 w-8 text-gray-300 mx-auto mb-3" />
-              <h3 className="text-sm font-medium text-gray-900 mb-1">No evaluations yet</h3>
-              <p className="text-xs text-gray-500">Evaluate documents to see results here</p>
-            </div>
-          ) : (
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {evaluationResults.map((evaluation) => (
-                <div key={evaluation.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="text-sm font-medium text-gray-900 truncate">
-                      {evaluation.fileName}
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      {evaluation.status === 'evaluating' && (
-                        <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                      )}
-                      {evaluation.status === 'completed' && (
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                      )}
-                      {evaluation.status === 'error' && (
-                        <AlertTriangle className="h-4 w-4 text-red-500" />
-                      )}
-                    </div>
-                  </div>
-                  
-                  {evaluation.status === 'completed' && (
-                    <>
-                      {/* Quality Score */}
-                      <div className="mb-3">
-                        <div className="flex justify-between text-sm mb-2">
-                          <span className="text-gray-600">Quality Score</span>
-                          <span className="font-medium">{evaluation.qualityScore}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full ${
-                              evaluation.qualityScore >= 80 ? 'bg-green-500' : 
-                              evaluation.qualityScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}
-                            style={{ width: `${evaluation.qualityScore}%` }}
-                          ></div>
-                        </div>
-                      </div>
-
-                      {/* Metrics Grid */}
-                      <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">GDPR</span>
-                          <span className="font-medium">{evaluation.gdprCompliance}%</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Integrity</span>
-                          <span className="font-medium">{evaluation.dataIntegrity}%</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Complete</span>
-                          <span className="font-medium">{evaluation.completeness}%</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Accuracy</span>
-                          <span className="font-medium">{evaluation.accuracy}%</span>
-                        </div>
-                      </div>
-
-                      {/* Issues */}
-                      {evaluation.issues.length > 0 && (
-                        <div className="mb-3">
-                          <div className="text-sm font-medium text-gray-700 mb-2">Issues Found:</div>
-                          <div className="space-y-1">
-                            {evaluation.issues.map((issue, index) => (
-                              <div key={index} className={`flex items-start space-x-2 text-xs ${
-                                issue.type === 'error' ? 'text-red-600' : 
-                                issue.type === 'warning' ? 'text-yellow-600' : 'text-blue-600'
-                              }`}>
-                                {issue.type === 'error' && <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />}
-                                {issue.type === 'warning' && <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />}
-                                {issue.type === 'info' && <CheckCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />}
-                                <span>{issue.message}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                        <span className="text-xs text-gray-500">
-                          {evaluation.timestamp.toLocaleTimeString()}
-                        </span>
-                        <button
-                          onClick={() => handleDeleteEvaluation(evaluation.id)}
-                          className="text-xs text-red-600 hover:text-red-800"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
+      {/* Enterprise Guidelines Upload */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center space-x-2 mb-6">
+          <Shield className="h-5 w-5 text-gray-600" />
+          <h2 className="text-lg font-semibold text-gray-900">Enterprise Guidelines Upload</h2>
+        </div>
+        
+        <div
+          className={`relative border-2 border-dashed rounded-lg p-8 transition-colors ${
+            dragActive
+              ? 'border-blue-400 bg-blue-50'
+              : 'border-gray-300 hover:border-gray-400'
+          }`}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+        >
+          <input
+            type="file"
+            multiple
+            accept=".pdf,.doc,.docx,.txt,.csv,.json"
+            onChange={handleFileInputChange}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          />
+          
+          <div className="text-center">
+            <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <div className="text-lg font-medium text-gray-900 mb-2">
+              {dragActive ? 'Drop your enterprise guidelines here' : 'Click to upload enterprise guidelines'}
+            </div>
+            <div className="text-sm text-gray-500">
+              PDF, DOC, DOCX, TXT, CSV, or JSON files (max 10MB each)
+            </div>
+            {isUploadingGuidelines && (
+              <div className="mt-4">
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p className="text-sm text-gray-600 mt-2">Processing guidelines...</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Uploaded Guidelines List */}
+        {enterpriseGuidelines.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-md font-semibold text-gray-900 mb-4">Uploaded Guidelines</h3>
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {enterpriseGuidelines.map((guideline) => (
+                <div key={guideline.id} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-3">
+                      <Shield className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <div className="font-medium text-gray-900 text-sm">{guideline.name}</div>
+                        <div className="text-xs text-gray-500">
+                          Enterprise Guidelines • {guideline.rules.length} rules • {guideline.uploadDate.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleEvaluateDatasetAgainstGuidelines(guideline.id)}
+                        className={`p-2 transition-colors ${
+                          isEvaluatingData || !selectedDataFile
+                            ? 'text-gray-300 cursor-not-allowed'
+                            : 'text-green-600 hover:text-green-800 hover:bg-green-50 rounded'
+                        }`}
+                        title={
+                          !selectedDataFile 
+                            ? 'Please select a data file first'
+                            : 'Evaluate selected dataset against this guideline'
+                        }
+                        disabled={isEvaluatingData || !selectedDataFile}
+                      >
+                        <BarChart3 className="h-4 w-4" />
+                      </button>
+                      {selectedDataFile && (
+                        <span className="text-xs text-green-600 font-medium">
+                          Ready to evaluate
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                    <div className="font-medium mb-1">Content Preview:</div>
+                    <div className="max-h-20 overflow-y-auto">
+                      {guideline.content.substring(0, 200)}...
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Intelligent Data Evaluation Dashboard */}
+      {showDashboard && evaluationResults.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">Intelligent Data Evaluation Dashboard</h2>
+            <button
+              onClick={() => setShowDashboard(false)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <EyeOff className="h-5 w-5" />
+            </button>
+          </div>
+          
+          <IntelligentDashboard evaluationResults={evaluationResults as any} isLoading={isEvaluatingData} />
+        </div>
+      )}
+
+      {/* Evaluation Results */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-semibold text-gray-900">Evaluation Results</h2>
+          <div className="flex items-center space-x-2">
+            <RefreshCw className="h-4 w-4 text-gray-400" />
+            <span className="text-sm text-gray-500">{stats.completedEvaluations} completed</span>
+          </div>
+        </div>
+        
+        {evaluationResults.length === 0 ? (
+          <div className="text-center py-8">
+            <BarChart3 className="h-8 w-8 text-gray-300 mx-auto mb-3" />
+            <h3 className="text-sm font-medium text-gray-900 mb-1">No evaluations yet</h3>
+            <p className="text-xs text-gray-500">Upload data files and guidelines to start evaluating</p>
+          </div>
+        ) : (
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {evaluationResults.map((evaluation) => (
+              <div key={evaluation.id} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-sm font-medium text-gray-900 truncate">
+                    {evaluation.fileName}
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    {evaluation.status === 'completed' && (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    )}
+                    {evaluation.status === 'error' && (
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                    )}
+                  </div>
+                </div>
+                
+                {evaluation.status === 'completed' && (
+                  <>
+                    {/* Overall Compliance Score */}
+                    <div className="mb-3">
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-gray-600">Overall Compliance</span>
+                        <span className="font-medium">{evaluation.overallComplianceScore}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full ${
+                            evaluation.overallComplianceScore >= 80 ? 'bg-green-500' : 
+                            evaluation.overallComplianceScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                          }`}
+                          style={{ width: `${evaluation.overallComplianceScore}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Metrics Grid */}
+                    <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">GDPR</span>
+                        <span className="font-medium">{evaluation.gdprComplianceScore}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Enterprise</span>
+                        <span className="font-medium">{evaluation.enterpriseComplianceScore}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Quality</span>
+                        <span className="font-medium">{evaluation.dataQualityScore}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Risk</span>
+                        <span className={`font-medium ${
+                          evaluation.riskLevel === 'critical' ? 'text-red-600' :
+                          evaluation.riskLevel === 'high' ? 'text-orange-600' :
+                          evaluation.riskLevel === 'medium' ? 'text-yellow-600' : 'text-green-600'
+                        }`}>
+                          {evaluation.riskLevel.toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Violations and Anomalies */}
+                    {(evaluation.violations.length > 0 || evaluation.anomalies.length > 0) && (
+                      <div className="mb-3">
+                        <div className="text-sm font-medium text-gray-700 mb-2">Issues Found:</div>
+                        <div className="space-y-1">
+                          {evaluation.violations.map((violation, index) => (
+                            <div key={`violation-${index}`} className={`flex items-start space-x-2 text-xs ${
+                              violation.severity === 'critical' ? 'text-red-600' : 
+                              violation.severity === 'high' ? 'text-orange-600' : 
+                              violation.severity === 'medium' ? 'text-yellow-600' : 'text-blue-600'
+                            }`}>
+                              <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                              <span>{violation.description}</span>
+                            </div>
+                          ))}
+                          {evaluation.anomalies.map((anomaly, index) => (
+                            <div key={`anomaly-${index}`} className={`flex items-start space-x-2 text-xs ${
+                              anomaly.severity === 'critical' ? 'text-red-600' : 
+                              anomaly.severity === 'high' ? 'text-orange-600' : 
+                              anomaly.severity === 'medium' ? 'text-yellow-600' : 'text-blue-600'
+                            }`}>
+                              <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                              <span>{anomaly.description}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recommendations */}
+                    {evaluation.recommendations.length > 0 && (
+                      <div className="mb-3">
+                        <div className="text-sm font-medium text-gray-700 mb-2">Recommendations:</div>
+                        <div className="space-y-1">
+                          {evaluation.recommendations.map((recommendation, index) => (
+                            <div key={index} className="flex items-start space-x-2 text-xs text-blue-600">
+                              <CheckCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                              <span>{recommendation}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                      <span className="text-xs text-gray-500">
+                        {evaluation.timestamp.toLocaleTimeString()}
+                      </span>
+                      <button
+                        onClick={() => handleDeleteEvaluation(evaluation.id)}
+                        className="text-xs text-red-600 hover:text-red-800"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Evaluation Results Dashboard */}
+        {showDashboard && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Evaluation Results</h2>
+              <div className="flex items-center space-x-4">
+                {/* Dashboard Type Selector */}
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm font-medium text-gray-700">Dashboard:</label>
+                  <select
+                    value={dashboardType}
+                    onChange={(e) => setDashboardType(e.target.value as any)}
+                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="basic">Basic</option>
+                    <option value="advanced">Advanced</option>
+                    <option value="3d">3D Interactive</option>
+                    <option value="cyberpunk">Cyberpunk</option>
+                  </select>
+                </div>
+                <button
+                  onClick={() => setShowDashboard(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="min-h-96">
+              {dashboardType === 'basic' && (
+                <IntelligentDashboard 
+                  evaluationResults={evaluationResults as any} 
+                  isLoading={isEvaluatingData}
+                />
+              )}
+              {dashboardType === 'advanced' && (
+                <AdvancedDashboard 
+                  evaluationResults={evaluationResults as any} 
+                  isLoading={isEvaluatingData}
+                />
+              )}
+              {dashboardType === '3d' && (
+                <Interactive3DDashboard 
+                  evaluationResults={evaluationResults as any} 
+                  isLoading={isEvaluatingData}
+                />
+              )}
+              {dashboardType === 'cyberpunk' && (
+                <CyberpunkDashboard 
+                  evaluationResults={evaluationResults as any} 
+                  isLoading={isEvaluatingData}
+                />
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </motion.div>
   );
 };
