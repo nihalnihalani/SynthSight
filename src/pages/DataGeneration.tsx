@@ -950,7 +950,7 @@ const DataGeneration: React.FC = () => {
                     <span className="text-sm font-medium text-blue-800">Quality Score</span>
                   </div>
                   <div className="text-2xl font-bold text-blue-900">
-                    {(qualityMetrics.qualityScore * 100).toFixed(1)}%
+                    {(dataAnalysis?.qualityMetrics?.qualityScore * 100)?.toFixed(1)}%
                   </div>
                 </div>
                 
@@ -960,7 +960,7 @@ const DataGeneration: React.FC = () => {
                     <span className="text-sm font-medium text-green-800">Privacy Score</span>
                   </div>
                   <div className="text-2xl font-bold text-green-900">
-                    {(qualityMetrics.privacyScore * 100).toFixed(1)}%
+                    {(dataAnalysis?.qualityMetrics?.privacyScore * 100)?.toFixed(1)}%
                   </div>
                 </div>
                 
@@ -970,7 +970,7 @@ const DataGeneration: React.FC = () => {
                     <span className="text-sm font-medium text-purple-800">Statistical Similarity</span>
                   </div>
                   <div className="text-2xl font-bold text-purple-900">
-                    {(qualityMetrics.statisticalSimilarity * 100).toFixed(1)}%
+                    {(dataAnalysis?.qualityMetrics?.statisticalSimilarity * 100)?.toFixed(1)}%
                   </div>
                 </div>
                 
@@ -980,7 +980,7 @@ const DataGeneration: React.FC = () => {
                     <span className="text-sm font-medium text-orange-800">Data Coverage</span>
                   </div>
                   <div className="text-2xl font-bold text-orange-900">
-                    {(qualityMetrics.dataCoverage * 100).toFixed(1)}%
+                    {(dataAnalysis?.qualityMetrics?.dataCoverage * 100)?.toFixed(1)}%
                   </div>
                 </div>
               </div>
