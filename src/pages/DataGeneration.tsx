@@ -414,13 +414,17 @@ const DataGeneration: React.FC = () => {
       
       try {
         toast.info('Processing File', 'Analyzing uploaded data...');
+        console.log('Starting file processing for:', file.name);
         
         // Parse the uploaded file
         const parsedData = await SyntheticDataService.parseFile(file);
+        console.log('File upload - Parsed data:', parsedData);
+        console.log('File upload - Data length:', parsedData.length);
         setOriginalData(parsedData);
         
         // Analyze the data
         const analysis = await SyntheticDataService.analyzeData(parsedData);
+        console.log('File upload - Analysis result:', analysis);
         setDataAnalysis(analysis);
         
         toast.success('File Processed', `${file.name} analyzed successfully. Found ${parsedData.length} records.`);

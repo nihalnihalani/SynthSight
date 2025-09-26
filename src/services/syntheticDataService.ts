@@ -41,15 +41,20 @@ export class SyntheticDataService {
    * Parse uploaded file and extract data
    */
   static async parseFile(file: File): Promise<any[]> {
+    console.log('parseFile called with:', file.name, file.size);
+    
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
       reader.onload = (e) => {
         try {
           const content = e.target?.result as string;
+          console.log('File content length:', content.length);
           const data = this.parseFileContent(content, file.name);
+          console.log('Parsed data length:', data.length);
           resolve(data);
         } catch (error) {
+          console.error('Error parsing file:', error);
           reject(error);
         }
       };
@@ -82,12 +87,18 @@ export class SyntheticDataService {
    * Parse CSV content using PapaParse
    */
   private static parseCSV(content: string): any[] {
+    console.log('parseCSV called with content length:', content.length);
+    
     const result = Papa.parse(content, {
       header: true,
       skipEmptyLines: true,
       transformHeader: (header) => header.trim().replace(/"/g, ''),
       transform: (value) => this.parseValue(value.trim().replace(/"/g, ''))
     });
+    
+    console.log('PapaParse result:', result);
+    console.log('Data length:', result.data.length);
+    console.log('Errors:', result.errors);
     
     if (result.errors.length > 0) {
       console.warn('CSV parsing warnings:', result.errors);
@@ -121,7 +132,11 @@ export class SyntheticDataService {
    * Analyze uploaded data and generate insights
    */
   static async analyzeData(data: any[]): Promise<DataAnalysisResult> {
+    console.log('analyzeData called with data:', data);
+    console.log('Data length:', data?.length);
+    
     if (!data || data.length === 0) {
+      console.error('No data provided for analysis');
       throw new Error('No data provided for analysis');
     }
 
