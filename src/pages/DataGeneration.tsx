@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Database, Download, FileText, RefreshCw, Settings, Play, Pause, Square, BarChart3, CheckCircle, AlertTriangle, TrendingUp, Upload, FileUp, BarChart, Shield, Zap, Brain, Target, Activity, Eye, Lock, Users, BarChart4, PieChart, LineChart, Scatter } from 'lucide-react';
+import { Database, Download, FileText, RefreshCw, Settings, Play, Pause, Square, BarChart3, CheckCircle, AlertTriangle, TrendingUp, Upload, FileUp, BarChart, Shield, Zap, Brain, Target, Activity, Eye, Lock, Users, BarChart4, PieChart, LineChart, ScatterChart } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from '../components/Toast';
 import DocumentUpload from '../components/DocumentUpload';
@@ -1421,7 +1421,7 @@ const DataGeneration: React.FC = () => {
           {/* Feature Relationships */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center space-x-2 mb-6">
-              <Scatter className="h-6 w-6 text-purple-600" />
+              <ScatterChart className="h-6 w-6 text-purple-600" />
               <h3 className="text-xl font-semibold text-gray-900">Feature Relationships</h3>
             </div>
             
