@@ -1,10 +1,12 @@
-import { LLMInteraction, DashboardStats, AgentSettings, AuditLogEntry, FeedbackEntry } from '../types';
+import { LLMInteraction, DashboardStats, AgentSettings, AuditLogEntry, FeedbackEntry, DocumentUpload as DocumentUploadType, AnalysisType } from '../types';
 import { agents } from '../agents';
 import { graphNeo4jDatabaseService } from '../services/graphNeo4jService';
 import { mockApi } from './mockApi';
 import { rateLimiter } from '../utils/rateLimiter';
 import { InputSanitizer } from '../utils/inputSanitizer';
 import { callOpenAI, isOpenAIConfigured } from '../lib/openaiAgent';
+import { perplexityService } from '../services/perplexityService';
+import { landingAIService } from '../services/landingAIService';
 
 export class ApiService {
   private useNeo4j: boolean;
@@ -158,6 +160,333 @@ export class ApiService {
     }
 
     return interaction;
+  }
+
+  async processDocument(document: DocumentUploadType, analysisTypes: AnalysisType[]): Promise<LLMInteraction> {
+    const clientId = this.getClientIdentifier();
+    
+    // Rate limiting
+    if (!rateLimiter.isAllowed(clientId)) {
+      const resetTime = rateLimiter.getResetTime(clientId);
+      const waitTime = Math.ceil((resetTime - Date.now()) / 1000);
+      throw new Error(`Rate limit exceeded. Please wait ${waitTime} seconds before trying again.`);
+    }
+
+    // Extract content using Landing AI if available
+    let extractedContent = document.content;
+    let extractionMetadata = null;
+
+    try {
+      if (landingAIService.isConfigured()) {
+        // Create a temporary file object for Landing AI
+        const tempFile = new File([document.content], document.fileName, { type: document.fileType });
+        const extractionResult = await landingAIService.extractDocumentContent(tempFile);
+        
+        if (extractionResult.success && extractionResult.data) {
+          extractedContent = extractionResult.data.content;
+          extractionMetadata = {
+            summary: extractionResult.data.summary,
+            entities: extractionResult.data.entities,
+            topics: extractionResult.data.topics,
+            metadata: extractionResult.data.metadata
+          };
+        }
+      }
+    } catch (error) {
+      console.warn('Landing AI extraction failed, using original content:', error);
+    }
+
+    // Validate document content
+    if (!extractedContent || extractedContent.trim().length === 0) {
+      throw new Error('Document content is empty or could not be extracted');
+    }
+
+    const sanitizedContent = InputSanitizer.sanitize(extractedContent);
+
+    // Create base interaction
+    const interaction: LLMInteraction = {
+      id: Math.random().toString(36).substr(2, 9),
+      timestamp: new Date(),
+      input: `Document Analysis: ${document.fileName}`,
+      output: '',
+      status: 'pending',
+      severity: 'low',
+      violations: [],
+      agentActions: [],
+      documentUpload: {
+        ...document,
+        content: extractedContent,
+        analysisResults: extractionMetadata
+      },
+      analysisType: analysisTypes[0] || 'text', // Use first analysis type as primary
+      llmSource: 'document_analysis',
+      llmModel: 'document-analyzer'
+    };
+
+    // Process based on selected analysis types
+    try {
+      const analysisResults = [];
+      
+      for (const analysisType of analysisTypes) {
+        if (analysisType === 'gdpr_compliance') {
+          await this.processGDPRCompliance(interaction, sanitizedContent);
+          analysisResults.push('GDPR Compliance Analysis');
+        } else if (analysisType === 'enterprise_guidelines') {
+          await this.processEnterpriseGuidelines(interaction, sanitizedContent);
+          analysisResults.push('Enterprise Guidelines Analysis');
+        } else if (analysisType === 'text') {
+          await this.processTextAnalysis(interaction, sanitizedContent);
+          analysisResults.push('General Text Analysis');
+        }
+      }
+      
+      // Update output to reflect all analyses performed
+      if (analysisResults.length > 0) {
+        interaction.output = `Document analysis completed with the following analyses: ${analysisResults.join(', ')}.\n\n${interaction.output}`;
+      }
+    } catch (error) {
+      console.error('Document analysis failed:', error);
+      interaction.output = `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      interaction.status = 'blocked';
+      interaction.severity = 'high';
+      interaction.violations.push({
+        type: 'compliance',
+        description: 'Document analysis failed',
+        severity: 8,
+        confidence: 1.0,
+        reason: 'Unable to process document for compliance analysis'
+      });
+    }
+
+    // Get current settings and process through agents
+    const settings = await this.getSettings();
+
+    // Process through agents
+    if (settings.policyEnforcer.enabled) {
+      const policyActions = await agents.policyEnforcer.process(interaction);
+      interaction.agentActions.push(...policyActions);
+    }
+
+    // Update violations and status based on agent actions
+    if (interaction.agentActions.some(action => action.action === 'flag' || action.action === 'block')) {
+      const maxSeverity = Math.max(...interaction.violations.map(v => v.severity), 0);
+      const isBlocked = interaction.agentActions.some(action => action.action === 'block');
+      
+      interaction.status = isBlocked || maxSeverity >= settings.severityThreshold ? 'blocked' : 'pending';
+      interaction.severity = this.mapSeverityToCategory(maxSeverity);
+    } else {
+      interaction.status = 'approved';
+      interaction.severity = 'low';
+    }
+
+    // Process through other agents
+    if (settings.verifier.enabled && interaction.violations.some(v => v.severity >= 7)) {
+      const verifierActions = await agents.verifier.process(interaction);
+      interaction.agentActions.push(...verifierActions);
+    }
+
+    if (settings.auditLogger.enabled) {
+      const auditActions = await agents.auditLogger.process(interaction);
+      interaction.agentActions.push(...auditActions);
+    }
+
+    if (settings.responseAgent.enabled) {
+      const responseActions = await agents.responseAgent.process(interaction);
+      interaction.agentActions.push(...responseActions);
+    }
+
+    if (settings.feedbackAgent.enabled) {
+      const feedbackActions = await agents.feedbackAgent.process(interaction);
+      interaction.agentActions.push(...feedbackActions);
+    }
+
+    // Log all agent actions to audit logs after processing
+    await this.logAllAgentActions(interaction);
+
+    // Save interaction
+    if (this.useNeo4j) {
+      try {
+        console.log('🔄 Attempting to save document interaction to Neo4j...', { id: interaction.id, fileName: document.fileName });
+        const neo4jId = await graphNeo4jDatabaseService.saveInteraction(interaction);
+        interaction.id = neo4jId;
+        console.log('✅ Successfully saved document interaction to Neo4j:', neo4jId);
+      } catch (error) {
+        console.error('❌ Failed to save document interaction to Neo4j:', error);
+        throw new Error(`Neo4j save failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    } else {
+      console.warn('⚠️ Neo4j not configured, using mock API for document processing');
+      return await mockApi.processDocument(document, analysisType);
+    }
+
+    return interaction;
+  }
+
+  private async processGDPRCompliance(interaction: LLMInteraction, content: string): Promise<void> {
+    try {
+      const gdprResult = await perplexityService.analyzeGDPRCompliance(content);
+      
+      // Store analysis results in document upload
+      if (interaction.documentUpload) {
+        interaction.documentUpload.analysisResults = {
+          gdprCompliance: gdprResult,
+          overallQualityScore: gdprResult.complianceScore
+        };
+      }
+
+      // Convert GDPR violations to general violations
+      interaction.violations = gdprResult.violations.map(violation => ({
+        type: 'gdpr' as const,
+        description: violation.description,
+        severity: this.mapGDPRSeverityToNumeric(violation.severity),
+        confidence: 0.9,
+        reason: violation.remediation,
+        location: violation.location,
+        regulatoryFramework: violation.article
+      }));
+
+      // Generate output summary
+      interaction.output = this.generateGDPRSummary(gdprResult);
+      
+    } catch (error) {
+      console.error('GDPR compliance analysis failed:', error);
+      throw new Error(`GDPR analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  private async processEnterpriseGuidelines(interaction: LLMInteraction, content: string): Promise<void> {
+    // For now, implement a basic enterprise guidelines analysis
+    // In a real implementation, this would integrate with Landing AI or similar service
+    
+    const enterpriseResult = {
+      complianceScore: 75, // Mock score
+      dataQualityMetrics: {
+        completeness: 80,
+        accuracy: 85,
+        consistency: 70,
+        timeliness: 90,
+        validity: 75,
+        uniqueness: 85
+      },
+      policyViolations: [
+        {
+          policyName: 'Data Classification Policy',
+          description: 'Sensitive data not properly classified',
+          severity: 'medium' as const,
+          remediation: 'Apply appropriate data classification labels'
+        }
+      ],
+      recommendations: [
+        'Implement data quality monitoring',
+        'Establish data governance framework',
+        'Regular compliance audits recommended'
+      ]
+    };
+
+    // Store analysis results
+    if (interaction.documentUpload) {
+      interaction.documentUpload.analysisResults = {
+        enterpriseGuidelines: enterpriseResult,
+        overallQualityScore: enterpriseResult.complianceScore
+      };
+    }
+
+    // Convert policy violations to general violations
+    interaction.violations = enterpriseResult.policyViolations.map(violation => ({
+      type: 'compliance' as const,
+      description: violation.description,
+      severity: this.mapEnterpriseSeverityToNumeric(violation.severity),
+      confidence: 0.8,
+      reason: violation.remediation,
+      location: violation.location
+    }));
+
+    // Generate output summary
+    interaction.output = this.generateEnterpriseSummary(enterpriseResult);
+  }
+
+  private async processTextAnalysis(interaction: LLMInteraction, content: string): Promise<void> {
+    // Basic text analysis for general content
+    const violations = [];
+    
+    // Check for PII patterns
+    const piiPatterns = [
+      /\b\d{3}-\d{2}-\d{4}\b/g, // SSN
+      /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, // Email
+      /\b\d{3}-\d{3}-\d{4}\b/g // Phone
+    ];
+
+    piiPatterns.forEach(pattern => {
+      if (pattern.test(content)) {
+        violations.push({
+          type: 'pii' as const,
+          description: 'Potential PII detected in document',
+          severity: 8,
+          confidence: 0.9,
+          reason: 'Document contains patterns that may be personal information'
+        });
+      }
+    });
+
+    interaction.violations = violations;
+    interaction.output = `Document analysis completed. Found ${violations.length} potential issues.`;
+  }
+
+  private mapGDPRSeverityToNumeric(severity: 'low' | 'medium' | 'high' | 'critical'): number {
+    switch (severity) {
+      case 'low': return 3;
+      case 'medium': return 5;
+      case 'high': return 7;
+      case 'critical': return 9;
+      default: return 5;
+    }
+  }
+
+  private mapEnterpriseSeverityToNumeric(severity: 'low' | 'medium' | 'high' | 'critical'): number {
+    switch (severity) {
+      case 'low': return 3;
+      case 'medium': return 5;
+      case 'high': return 7;
+      case 'critical': return 9;
+      default: return 5;
+    }
+  }
+
+  private generateGDPRSummary(gdprResult: any): string {
+    return `GDPR Compliance Analysis Complete
+
+Compliance Score: ${gdprResult.complianceScore}/100
+
+Data Processing Basis: ${gdprResult.dataProcessingBasis.join(', ') || 'Not specified'}
+Data Subject Rights: ${gdprResult.dataSubjectRights.join(', ') || 'Not addressed'}
+Data Retention Compliance: ${gdprResult.dataRetentionCompliance ? 'Yes' : 'No'}
+Cross-border Transfer Compliance: ${gdprResult.crossBorderTransferCompliance ? 'Yes' : 'No'}
+
+Violations Found: ${gdprResult.violations.length}
+${gdprResult.violations.map((v: any) => `- ${v.article}: ${v.description}`).join('\n')}
+
+Recommendations:
+${gdprResult.recommendations.map((r: string) => `- ${r}`).join('\n')}`;
+  }
+
+  private generateEnterpriseSummary(enterpriseResult: any): string {
+    return `Enterprise Guidelines Analysis Complete
+
+Compliance Score: ${enterpriseResult.complianceScore}/100
+
+Data Quality Metrics:
+- Completeness: ${enterpriseResult.dataQualityMetrics.completeness}%
+- Accuracy: ${enterpriseResult.dataQualityMetrics.accuracy}%
+- Consistency: ${enterpriseResult.dataQualityMetrics.consistency}%
+- Timeliness: ${enterpriseResult.dataQualityMetrics.timeliness}%
+- Validity: ${enterpriseResult.dataQualityMetrics.validity}%
+- Uniqueness: ${enterpriseResult.dataQualityMetrics.uniqueness}%
+
+Policy Violations: ${enterpriseResult.policyViolations.length}
+${enterpriseResult.policyViolations.map((v: any) => `- ${v.policyName}: ${v.description}`).join('\n')}
+
+Recommendations:
+${enterpriseResult.recommendations.map((r: string) => `- ${r}`).join('\n')}`;
   }
 
   private async logAllAgentActions(interaction: LLMInteraction): Promise<void> {

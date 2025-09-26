@@ -1,4 +1,5 @@
 import { perplexityConfig } from '../config/perplexity';
+import { GDPRComplianceResult, GDPRViolation } from '../types';
 
 export interface PerplexityResponse {
   id: string;
@@ -72,6 +73,22 @@ export class PerplexityService {
     } catch (error) {
       console.error('Perplexity fact-check failed:', error);
       throw new Error(`Fact-check failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async analyzeGDPRCompliance(documentContent: string): Promise<GDPRComplianceResult> {
+    if (!this.apiKey) {
+      throw new Error('Perplexity API key not configured');
+    }
+
+    try {
+      const prompt = this.buildGDPRCompliancePrompt(documentContent);
+      const response = await this.callPerplexityAPI(prompt);
+      
+      return this.parseGDPRComplianceResponse(response);
+    } catch (error) {
+      console.error('Perplexity GDPR compliance analysis failed:', error);
+      throw new Error(`GDPR compliance analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -189,6 +206,144 @@ Fact-checking process:
 5. Check for common misinformation patterns
 
 Be confident in your assessment - if something is clearly false, mark it as such with high confidence.`;
+  }
+
+  private buildGDPRCompliancePrompt(documentContent: string): string {
+    return `You are a GDPR compliance expert. Analyze the following document content for compliance with GDPR (General Data Protection Regulation) guidelines. Focus on data processing, privacy rights, and regulatory requirements.
+
+Document Content:
+"${documentContent}"
+
+Analyze the document for GDPR compliance across these key areas:
+
+1. **Data Processing Basis (Article 6)** - Check if there's a lawful basis for processing personal data
+2. **Data Subject Rights (Articles 15-22)** - Verify if data subject rights are properly addressed
+3. **Data Minimization (Article 5(1)(c))** - Check if only necessary data is collected
+4. **Purpose Limitation (Article 5(1)(b))** - Verify if data is used for specified purposes
+5. **Storage Limitation (Article 5(1)(e))** - Check if data retention periods are defined
+6. **Accuracy (Article 5(1)(d))** - Verify if data is kept accurate and up-to-date
+7. **Security (Article 32)** - Check if appropriate security measures are mentioned
+8. **Cross-border Transfers (Chapter V)** - Verify if international transfers are properly handled
+9. **Data Protection by Design (Article 25)** - Check if privacy considerations are built-in
+10. **Consent (Article 6(1)(a))** - Verify if consent is properly obtained and documented
+
+Respond in JSON format:
+{
+  "complianceScore": 0-100,
+  "violations": [
+    {
+      "article": "GDPR Article X",
+      "description": "Description of the violation",
+      "severity": "low|medium|high|critical",
+      "location": "Where in the document the issue was found",
+      "remediation": "How to fix this issue"
+    }
+  ],
+  "dataProcessingBasis": ["List of identified lawful bases"],
+  "dataSubjectRights": ["List of data subject rights addressed"],
+  "dataRetentionCompliance": true/false,
+  "crossBorderTransferCompliance": true/false,
+  "recommendations": ["List of recommendations for improvement"]
+}
+
+Scoring Guidelines:
+- 90-100: Excellent compliance with minor issues
+- 70-89: Good compliance with some areas needing improvement
+- 50-69: Moderate compliance with significant gaps
+- 30-49: Poor compliance with major issues
+- 0-29: Very poor compliance requiring immediate attention
+
+Be thorough in your analysis and provide specific, actionable recommendations.`;
+  }
+
+  private parseGDPRComplianceResponse(response: PerplexityResponse): GDPRComplianceResult {
+    try {
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error('No content in Perplexity response');
+      }
+
+      // Extract JSON from response
+      let jsonString = this.extractJsonFromMarkdown(content);
+      if (!jsonString) {
+        jsonString = this.extractJsonFromText(content);
+      }
+
+      if (jsonString) {
+        const parsed = JSON.parse(jsonString);
+        
+        return {
+          complianceScore: Math.max(0, Math.min(100, parsed.complianceScore || 0)),
+          violations: parsed.violations || [],
+          dataProcessingBasis: parsed.dataProcessingBasis || [],
+          dataSubjectRights: parsed.dataSubjectRights || [],
+          dataRetentionCompliance: parsed.dataRetentionCompliance || false,
+          crossBorderTransferCompliance: parsed.crossBorderTransferCompliance || false,
+          recommendations: parsed.recommendations || []
+        };
+      }
+
+      // Fallback parsing if JSON extraction fails
+      return this.parseGDPRComplianceFromText(content);
+    } catch (error) {
+      console.error('Failed to parse GDPR compliance response:', error);
+      
+      // Return conservative result on parsing failure
+      return {
+        complianceScore: 30, // Low score when we can't parse
+        violations: [{
+          article: 'GDPR Analysis Error',
+          description: 'Unable to parse compliance analysis response',
+          severity: 'medium' as const,
+          remediation: 'Please review the document manually for GDPR compliance'
+        }],
+        dataProcessingBasis: [],
+        dataSubjectRights: [],
+        dataRetentionCompliance: false,
+        crossBorderTransferCompliance: false,
+        recommendations: ['Manual review required due to analysis parsing error']
+      };
+    }
+  }
+
+  private parseGDPRComplianceFromText(content: string): GDPRComplianceResult {
+    // Basic text analysis for GDPR compliance
+    const contentLower = content.toLowerCase();
+    
+    // Look for compliance indicators
+    const complianceIndicators = [
+      'gdpr compliant', 'privacy policy', 'data protection', 'consent',
+      'data subject rights', 'lawful basis', 'data minimization',
+      'purpose limitation', 'storage limitation', 'accuracy'
+    ];
+    
+    const violationIndicators = [
+      'non-compliant', 'violation', 'breach', 'missing', 'inadequate',
+      'insufficient', 'lacks', 'fails to', 'does not comply'
+    ];
+    
+    const complianceScore = complianceIndicators.reduce((score, indicator) => 
+      score + (contentLower.includes(indicator) ? 10 : 0), 0);
+    
+    const violationScore = violationIndicators.reduce((score, indicator) => 
+      score + (contentLower.includes(indicator) ? 15 : 0), 0);
+    
+    const finalScore = Math.max(0, Math.min(100, complianceScore - violationScore));
+    
+    return {
+      complianceScore: finalScore,
+      violations: violationScore > 0 ? [{
+        article: 'GDPR General Compliance',
+        description: 'Potential compliance issues detected in document',
+        severity: violationScore > 30 ? 'high' as const : 'medium' as const,
+        remediation: 'Review document for GDPR compliance requirements'
+      }] : [],
+      dataProcessingBasis: [],
+      dataSubjectRights: [],
+      dataRetentionCompliance: contentLower.includes('retention') || contentLower.includes('storage'),
+      crossBorderTransferCompliance: contentLower.includes('transfer') || contentLower.includes('international'),
+      recommendations: ['Manual review recommended for comprehensive GDPR compliance assessment']
+    };
   }
 
   private parseVerificationResponse(response: PerplexityResponse): VerificationResult {

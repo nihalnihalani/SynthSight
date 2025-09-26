@@ -3,16 +3,18 @@ import { motion } from 'framer-motion';
 import InteractionCard from '../components/InteractionCard';
 import PromptTester from '../components/PromptTester';
 import { apiService } from '../api/apiService';
-import { LLMInteraction } from '../types';
+import { LLMInteraction, DocumentUpload as DocumentUploadType, AnalysisType } from '../types';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
 import { Activity, RefreshCw } from 'lucide-react';
+import { useDocumentContext, ExtractedDocument } from '../contexts/DocumentContext';
 
 const LiveMonitor: React.FC = () => {
   const [interactions, setInteractions] = useState<LLMInteraction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
+  const { addDocument } = useDocumentContext();
 
   useEffect(() => {
     const fetchInteractions = async () => {
@@ -41,6 +43,58 @@ const LiveMonitor: React.FC = () => {
       }
     } catch (error) {
       console.error('Error processing prompt:', error);
+      toast.error('Processing Failed', error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDocumentSubmit = async (document: DocumentUploadType, analysisTypes: AnalysisType[]) => {
+    setIsLoading(true);
+    
+    try {
+      // Show processing toast
+      toast.info('Processing Document', 'Extracting content and generating summary...');
+      
+      const interaction = await apiService.processDocument(document, analysisTypes);
+      setInteractions(prev => [interaction, ...prev]);
+      
+      // Add document to context for Data Evaluation tab
+      if (interaction.documentUpload?.analysisResults) {
+        const extractedDoc: ExtractedDocument = {
+          id: interaction.id,
+          fileName: document.fileName,
+          uploadDate: new Date(),
+          content: interaction.documentUpload.content || document.content,
+          summary: interaction.documentUpload.analysisResults.summary || 'No summary available',
+          metadata: interaction.documentUpload.analysisResults.metadata || {
+            title: document.fileName,
+            author: 'Unknown',
+            pages: 1,
+            wordCount: (interaction.documentUpload.content || document.content).split(' ').length,
+            extractedAt: new Date().toISOString()
+          },
+          entities: interaction.documentUpload.analysisResults.entities || [],
+          topics: interaction.documentUpload.analysisResults.topics || [],
+          isExpanded: false
+        };
+        
+        addDocument(extractedDoc);
+        
+        // Show success toast with link to Data Evaluation
+        toast.success('Document Processed', 'Content extracted and added to Data Evaluation tab');
+      }
+      
+      // Show toast based on result
+      if (interaction.status === 'blocked') {
+        toast.error('Document Blocked', `${interaction.violations.length} violation(s) detected`);
+      } else if (interaction.status === 'pending') {
+        toast.warning('Document Flagged', 'Content requires review');
+      } else {
+        toast.success('Document Approved', 'No violations detected');
+      }
+    } catch (error) {
+      console.error('Error processing document:', error);
       toast.error('Processing Failed', error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setIsLoading(false);
@@ -134,7 +188,11 @@ const LiveMonitor: React.FC = () => {
       
       <ToastContainer toasts={toast.toasts} onRemove={toast.removeToast} />
       
-      <PromptTester onSubmit={handlePromptSubmit} isLoading={isLoading} />
+      <PromptTester 
+        onSubmit={handlePromptSubmit} 
+        onDocumentSubmit={handleDocumentSubmit}
+        isLoading={isLoading} 
+      />
 
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-gray-900">

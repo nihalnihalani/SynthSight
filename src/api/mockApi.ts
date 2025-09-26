@@ -1,4 +1,4 @@
-import { LLMInteraction, DashboardStats, AgentSettings, AuditLogEntry, FeedbackEntry } from '../types';
+import { LLMInteraction, DashboardStats, AgentSettings, AuditLogEntry, FeedbackEntry, DocumentUpload as DocumentUploadType, AnalysisType } from '../types';
 import { agents } from "../agents";
 
 class MockApiService {
@@ -89,6 +89,101 @@ class MockApiService {
     this.logAllAgentActions(interaction);
 
     this.interactions.push(interaction);
+    return interaction;
+  }
+
+  async processDocument(document: DocumentUploadType, analysisTypes: AnalysisType[]): Promise<LLMInteraction> {
+    const interaction: LLMInteraction = {
+      id: Math.random().toString(36).substr(2, 9),
+      timestamp: new Date(),
+      input: `Document Analysis: ${document.fileName}`,
+      output: `Mock document analysis completed for ${document.fileName}`,
+      status: 'approved',
+      severity: 'low',
+      violations: [],
+      agentActions: [],
+      documentUpload: document,
+      analysisType: analysisTypes[0] || 'text',
+      llmSource: 'mock',
+      llmModel: 'mock-document-analyzer'
+    };
+
+    // Add mock analysis results based on selected analysis types
+    const analysisResults: any = {};
+    let overallScore = 0;
+    let analysisCount = 0;
+
+    if (analysisTypes.includes('gdpr_compliance')) {
+      analysisResults.gdprCompliance = {
+        complianceScore: 85,
+        violations: [],
+        dataProcessingBasis: ['Consent', 'Legitimate Interest'],
+        dataSubjectRights: ['Access', 'Rectification', 'Erasure'],
+        dataRetentionCompliance: true,
+        crossBorderTransferCompliance: true,
+        recommendations: ['Regular compliance audits recommended']
+      };
+      overallScore += 85;
+      analysisCount++;
+    }
+
+    if (analysisTypes.includes('enterprise_guidelines')) {
+      analysisResults.enterpriseGuidelines = {
+        complianceScore: 80,
+        dataQualityMetrics: {
+          completeness: 85,
+          accuracy: 90,
+          consistency: 75,
+          timeliness: 95,
+          validity: 80,
+          uniqueness: 85
+        },
+        policyViolations: [],
+        recommendations: ['Implement automated data quality monitoring']
+      };
+      overallScore += 80;
+      analysisCount++;
+    }
+
+    if (analysisTypes.includes('text')) {
+      // Add basic text analysis results
+      analysisResults.textAnalysis = {
+        wordCount: document.content?.split(' ').length || 0,
+        characterCount: document.content?.length || 0,
+        language: 'en',
+        sentiment: 'neutral'
+      };
+    }
+
+    if (Object.keys(analysisResults).length > 0) {
+      interaction.documentUpload!.analysisResults = {
+        ...analysisResults,
+        overallQualityScore: analysisCount > 0 ? Math.round(overallScore / analysisCount) : 75
+      };
+    }
+
+    // Process through agents
+    if (this.settings.policyEnforcer.enabled) {
+      const policyActions = await agents.policyEnforcer.process(interaction);
+      interaction.agentActions.push(...policyActions);
+    }
+
+    if (this.settings.auditLogger.enabled) {
+      const auditActions = await agents.auditLogger.process(interaction);
+      interaction.agentActions.push(...auditActions);
+    }
+
+    if (this.settings.responseAgent.enabled) {
+      const responseActions = await agents.responseAgent.process(interaction);
+      interaction.agentActions.push(...responseActions);
+    }
+
+    if (this.settings.feedbackAgent.enabled) {
+      const feedbackActions = await agents.feedbackAgent.process(interaction);
+      interaction.agentActions.push(...feedbackActions);
+    }
+
+    this.interactions.unshift(interaction);
     return interaction;
   }
 

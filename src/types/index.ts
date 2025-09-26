@@ -11,6 +11,68 @@ export interface LLMInteraction {
   llmSource?: 'openai' | 'mock' | 'fallback';
   llmModel?: string;
   llmError?: string;
+  // Document upload support
+  documentUpload?: DocumentUpload;
+  analysisType?: 'text' | 'gdpr_compliance' | 'enterprise_guidelines';
+}
+
+export interface DocumentUpload {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  uploadTimestamp: Date;
+  content?: string; // Extracted text content
+  analysisResults?: DocumentAnalysisResults;
+}
+
+export interface DocumentAnalysisResults {
+  gdprCompliance?: GDPRComplianceResult;
+  enterpriseGuidelines?: EnterpriseGuidelinesResult;
+  overallQualityScore?: number;
+  recommendations?: string[];
+}
+
+export interface GDPRComplianceResult {
+  complianceScore: number; // 0-100
+  violations: GDPRViolation[];
+  dataProcessingBasis: string[];
+  dataSubjectRights: string[];
+  dataRetentionCompliance: boolean;
+  crossBorderTransferCompliance: boolean;
+  recommendations: string[];
+}
+
+export interface GDPRViolation {
+  article: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  location?: string;
+  remediation: string;
+}
+
+export interface EnterpriseGuidelinesResult {
+  complianceScore: number; // 0-100
+  dataQualityMetrics: DataQualityMetrics;
+  policyViolations: PolicyViolation[];
+  recommendations: string[];
+}
+
+export interface DataQualityMetrics {
+  completeness: number;
+  accuracy: number;
+  consistency: number;
+  timeliness: number;
+  validity: number;
+  uniqueness: number;
+}
+
+export interface PolicyViolation {
+  policyName: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  location?: string;
+  remediation: string;
 }
 
 export interface Violation {

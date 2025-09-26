@@ -7,7 +7,9 @@ import {
   Settings, 
   AlertTriangle,
   Users,
-  Activity
+  Activity,
+  Database,
+  TrendingUp
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -19,6 +21,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
   const menuItems = [
     { id: 'dashboard', icon: BarChart3, label: 'Dashboard' },
     { id: 'monitor', icon: Activity, label: 'Live Monitor' },
+    { id: 'data-generation', icon: Database, label: 'Data Generation' },
+    { id: 'data-evaluation', icon: TrendingUp, label: 'Data Evaluation' },
     { id: 'logs', icon: FileText, label: 'Audit Logs' },
     { id: 'violations', icon: AlertTriangle, label: 'Violations' },
     { id: 'agents', icon: Users, label: 'Agents' },
