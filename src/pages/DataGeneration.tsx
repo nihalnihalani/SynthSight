@@ -6,6 +6,8 @@ import { ToastContainer } from '../components/Toast';
 import DocumentUpload from '../components/DocumentUpload';
 import { DocumentUpload as DocumentUploadType, AnalysisType } from '../types';
 import { SyntheticDataService, DataAnalysisResult, SyntheticDataRequest } from '../services/syntheticDataService';
+import { MultiAIEvaluationService, EvaluationRequest } from '../services/multiAIEvaluationService';
+import MultiAIEvaluationDashboard from '../components/MultiAIEvaluationDashboard';
 
 // Real calculation functions for synthetic data analysis
 const calculateDistributionSimilarity = (original: DataAnalysisResult, synthetic: DataAnalysisResult): number => {
@@ -247,6 +249,9 @@ const DataGeneration: React.FC = () => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [activeTab, setActiveTab] = useState<'generator' | 'dashboard'>('generator');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [multiAIEvaluationResult, setMultiAIEvaluationResult] = useState<any>(null);
+  const [showMultiAIEvaluation, setShowMultiAIEvaluation] = useState(false);
+  const [multiAIEvaluationService] = useState(() => new MultiAIEvaluationService());
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [generatedFiles, setGeneratedFiles] = useState<Array<{
@@ -269,7 +274,8 @@ const DataGeneration: React.FC = () => {
     dataFormat: 'csv',
     modelType: 'ctgan',
     privacyLevel: 0.5,
-    epochs: 300
+    epochs: 300,
+    enableMultiAIEvaluation: true
   });
   
   const toast = useToast();
@@ -606,15 +612,48 @@ const DataGeneration: React.FC = () => {
             )
           );
       
-      toast.success('Generation Complete', `Generated ${generationSettings.recordCount} synthetic rows with ${generationSettings.modelType.toUpperCase()}`);
-      
-    } catch (error) {
-      console.error('Error generating synthetic data:', error);
-      toast.error('Generation Failed', error instanceof Error ? error.message : 'Failed to generate synthetic data');
-      setIsGenerating(false);
-      setGenerationProgress(0);
-    }
-  };
+          toast.success('Generation Complete', `Generated ${generationSettings.recordCount} synthetic rows with ${generationSettings.modelType.toUpperCase()}`);
+          
+          // Step 6: Multi-AI Evaluation (Optional)
+          if (generationSettings.enableMultiAIEvaluation) {
+            setGenerationProgress(95);
+            toast.info('Multi-AI Evaluation', 'Running comprehensive AI evaluation...');
+            
+            try {
+              const evaluationRequest: EvaluationRequest = {
+                originalData: originalData,
+                syntheticData: generatedSyntheticData,
+                originalAnalysis: dataAnalysis!,
+                syntheticAnalysis: syntheticAnalysis,
+                domainContext: 'synthetic data generation',
+                useCase: 'machine learning training',
+                privacyRequirements: {
+                  level: generationSettings.privacyLevel > 0.7 ? 'high' : generationSettings.privacyLevel > 0.4 ? 'medium' : 'low',
+                  regulations: ['GDPR', 'CCPA']
+                },
+                qualityThresholds: {
+                  minimumScore: 70,
+                  requiredAgreement: 0.6
+                }
+              };
+              
+              const evaluationResult = await multiAIEvaluationService.evaluateSyntheticData(evaluationRequest);
+              setMultiAIEvaluationResult(evaluationResult);
+              
+              toast.success('Multi-AI Evaluation Complete', `Consensus Score: ${evaluationResult.consensusScore}/100`);
+            } catch (evalError) {
+              console.error('Multi-AI evaluation error:', evalError);
+              toast.warning('Evaluation Warning', 'Multi-AI evaluation failed, but generation completed successfully');
+            }
+          }
+          
+        } catch (error) {
+          console.error('Error generating synthetic data:', error);
+          toast.error('Generation Failed', error instanceof Error ? error.message : 'Failed to generate synthetic data');
+          setIsGenerating(false);
+          setGenerationProgress(0);
+        }
+      };
 
   const handleStartGeneration = async () => {
     console.log('handleStartGeneration called');
@@ -1046,6 +1085,7 @@ const DataGeneration: React.FC = () => {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
+                    onClick={downloadSyntheticData}
                     className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                   >
                     <Download className="h-4 w-4" />
@@ -1054,11 +1094,35 @@ const DataGeneration: React.FC = () => {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      const jsonContent = JSON.stringify(syntheticData, null, 2);
+                      const blob = new Blob([jsonContent], { type: 'application/json' });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `synthetic_data_${generationSettings.modelType}_${new Date().toISOString().split('T')[0]}.json`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      window.URL.revokeObjectURL(url);
+                      toast.success('Download Complete', 'Synthetic data downloaded as JSON');
+                    }}
                     className="flex items-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     <FileText className="h-4 w-4" />
                     <span>Download JSON</span>
                   </motion.button>
+                  {multiAIEvaluationResult && (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setShowMultiAIEvaluation(true)}
+                      className="flex items-center space-x-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      <Brain className="h-4 w-4" />
+                      <span>Multi-AI Evaluation</span>
+                    </motion.button>
+                  )}
                 </div>
               </div>
               
@@ -1739,6 +1803,14 @@ const DataGeneration: React.FC = () => {
         </div>
       )}
     </motion.div>
+    
+    {/* Multi-AI Evaluation Dashboard */}
+    {showMultiAIEvaluation && multiAIEvaluationResult && (
+      <MultiAIEvaluationDashboard
+        evaluationResult={multiAIEvaluationResult}
+        onClose={() => setShowMultiAIEvaluation(false)}
+      />
+    )}
   );
 };
 

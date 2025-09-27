@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, FileText, Trash2, BarChart3, CheckCircle, AlertTriangle, RefreshCw, EyeOff, Upload, Shield, X } from 'lucide-react';
+import { TrendingUp, FileText, Trash2, BarChart3, CheckCircle, AlertTriangle, RefreshCw, EyeOff, Upload, Shield, X, Brain, Zap, Users, Target, Settings } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from '../components/Toast';
 import { useDocumentContext, ExtractedDocument } from '../contexts/DocumentContext';
 import { useDataContext, DataEvaluationResult as ContextDataEvaluationResult } from '../contexts/DataContext';
 import { companyGuidelinesService, CompanyGuideline } from '../services/companyGuidelinesService';
 import { perplexityService } from '../services/perplexityService';
+import { ConsiliumEvaluationService, EvaluationRequest, ConsiliumEvaluationResult } from '../services/consiliumEvaluationService';
+import ConsiliumEvaluationDashboard from '../components/ConsiliumEvaluationDashboard';
 import IntelligentDashboard from '../components/IntelligentDashboard';
 import AdvancedDashboard from '../components/AdvancedDashboard';
 import Interactive3DDashboard from '../components/Interactive3DDashboard';
@@ -26,6 +28,13 @@ const DataEvaluation: React.FC = () => {
   const [showDashboard, setShowDashboard] = useState(false);
   const [dashboardType, setDashboardType] = useState<'basic' | 'advanced' | '3d' | 'cyberpunk'>('basic');
   const [dragActive, setDragActive] = useState(false);
+  
+  // Consilium Multi-LLM Evaluation State
+  const [consiliumEvaluationService] = useState(() => new ConsiliumEvaluationService());
+  const [consiliumEvaluationResult, setConsiliumEvaluationResult] = useState<ConsiliumEvaluationResult | null>(null);
+  const [showConsiliumDashboard, setShowConsiliumDashboard] = useState(false);
+  const [isConsiliumEvaluating, setIsConsiliumEvaluating] = useState(false);
+  const [evaluationMode, setEvaluationMode] = useState<'traditional' | 'consilium'>('traditional');
   const [uploadedDataFiles, setUploadedDataFiles] = useState<Array<{
     id: string;
     name: string;
@@ -208,6 +217,11 @@ const DataEvaluation: React.FC = () => {
       return;
     }
 
+    if (evaluationMode === 'consilium') {
+      await handleConsiliumEvaluation(guidelineId);
+      return;
+    }
+
     setIsEvaluatingData(true);
     
     try {
@@ -268,6 +282,81 @@ const DataEvaluation: React.FC = () => {
     }
   };
 
+  const handleConsiliumEvaluation = async (guidelineId: string) => {
+    if (!selectedDataFile) {
+      toast.error('No Data File Selected', 'Please upload and select a data file first');
+      return;
+    }
+
+    setIsConsiliumEvaluating(true);
+    
+    try {
+      toast.info('Starting Consilium Multi-LLM Evaluation', 'Running comprehensive AI evaluation with research integration...');
+
+      // Parse the data file content
+      let originalData: any[] = [];
+      try {
+        if (selectedDataFile.name.endsWith('.csv')) {
+          const lines = selectedDataFile.content.split('\n');
+          const headers = lines[0].split(',');
+          originalData = lines.slice(1).map(line => {
+            const values = line.split(',');
+            const obj: any = {};
+            headers.forEach((header, index) => {
+              obj[header.trim()] = values[index]?.trim() || '';
+            });
+            return obj;
+          }).filter(obj => Object.values(obj).some(val => val !== ''));
+        } else if (selectedDataFile.name.endsWith('.json')) {
+          originalData = JSON.parse(selectedDataFile.content);
+        } else {
+          // For other formats, create a simple structure
+          originalData = [{ content: selectedDataFile.content }];
+        }
+      } catch (error) {
+        console.error('Error parsing data:', error);
+        originalData = [{ content: selectedDataFile.content }];
+      }
+
+      // Create evaluation request
+      const evaluationRequest: EvaluationRequest = {
+        originalData: originalData,
+        syntheticData: originalData, // For now, evaluating against itself
+        domainContext: 'data evaluation',
+        useCase: 'compliance assessment',
+        privacyRequirements: {
+          level: 'high',
+          regulations: ['GDPR', 'CCPA']
+        },
+        qualityThresholds: {
+          minimumScore: 70,
+          requiredAgreement: 0.6
+        }
+      };
+
+      // Run Consilium evaluation
+      const consiliumResult = await consiliumEvaluationService.evaluateSyntheticData(evaluationRequest);
+      
+      setConsiliumEvaluationResult(consiliumResult);
+      setShowConsiliumDashboard(true);
+      
+      toast.success('Consilium Evaluation Complete', 
+        `Multi-LLM consensus: ${consiliumResult.consensusScore}/100 (${consiliumResult.agreementLevel} agreement)`);
+      
+      if (consiliumResult.finalRecommendation.riskAssessment === 'critical' || 
+          consiliumResult.finalRecommendation.riskAssessment === 'high') {
+        toast.warning('High Risk Detected', 
+          `Risk Level: ${consiliumResult.finalRecommendation.riskAssessment.toUpperCase()}`);
+      }
+      
+    } catch (error) {
+      console.error('Error in Consilium evaluation:', error);
+      toast.error('Consilium Evaluation Failed', 'Failed to run multi-LLM evaluation');
+    } finally {
+      setIsConsiliumEvaluating(false);
+    }
+  };
+
   const getOverallStats = () => {
     const completedEvaluations = evaluationResults.filter(e => e.status === 'completed');
     const totalEvaluations = evaluationResults.length;
@@ -305,6 +394,19 @@ const DataEvaluation: React.FC = () => {
         </div>
         
         <div className="flex items-center space-x-4">
+          {/* Evaluation Mode Selector */}
+          <div className="flex items-center space-x-2">
+            <label className="text-sm font-medium text-gray-700">Evaluation Mode:</label>
+            <select
+              value={evaluationMode}
+              onChange={(e) => setEvaluationMode(e.target.value as 'traditional' | 'consilium')}
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="traditional">Traditional</option>
+              <option value="consilium">Consilium Multi-LLM</option>
+            </select>
+          </div>
+          
           <div className="text-right">
             <div className="text-sm text-gray-500">Total Evaluations</div>
             <div className="text-2xl font-bold text-gray-900">{stats.totalEvaluations}</div>
@@ -417,7 +519,7 @@ const DataEvaluation: React.FC = () => {
             </div>
             
             {/* Evaluation Button */}
-            {selectedDataFile && enterpriseGuidelines.length > 0 && (
+            {selectedDataFile && (
               <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div>
@@ -425,16 +527,29 @@ const DataEvaluation: React.FC = () => {
                       Ready to Evaluate
                     </div>
                     <div className="text-xs text-green-600">
-                      Selected: {selectedDataFile.name} • {enterpriseGuidelines.length} guideline(s) available
+                      Selected: {selectedDataFile.name} • Mode: {evaluationMode === 'consilium' ? 'Consilium Multi-LLM' : 'Traditional'}
+                      {evaluationMode === 'traditional' && enterpriseGuidelines.length > 0 && ` • ${enterpriseGuidelines.length} guideline(s) available`}
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleEvaluateDatasetAgainstGuidelines(enterpriseGuidelines[0].id)}
-                    className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={isEvaluatingData}
-                  >
-                    {isEvaluatingData ? 'Evaluating...' : 'Start Evaluation'}
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    {evaluationMode === 'consilium' && (
+                      <div className="flex items-center space-x-1 text-xs text-blue-600">
+                        <Brain className="w-4 h-4" />
+                        <span>Multi-LLM</span>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => handleEvaluateDatasetAgainstGuidelines(
+                        evaluationMode === 'traditional' && enterpriseGuidelines.length > 0 
+                          ? enterpriseGuidelines[0].id 
+                          : 'consilium-evaluation'
+                      )}
+                      className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={isEvaluatingData || isConsiliumEvaluating || (evaluationMode === 'traditional' && enterpriseGuidelines.length === 0)}
+                    >
+                      {isEvaluatingData || isConsiliumEvaluating ? 'Evaluating...' : 'Start Evaluation'}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -756,6 +871,19 @@ const DataEvaluation: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Consilium Multi-LLM Evaluation Dashboard */}
+      {showConsiliumDashboard && consiliumEvaluationResult && (
+        <ConsiliumEvaluationDashboard
+          evaluationResult={consiliumEvaluationResult}
+          onClose={() => setShowConsiliumDashboard(false)}
+          onRetry={() => {
+            if (selectedDataFile && enterpriseGuidelines.length > 0) {
+              handleConsiliumEvaluation(enterpriseGuidelines[0].id);
+            }
+          }}
+        />
+      )}
     </motion.div>
   );
 };
