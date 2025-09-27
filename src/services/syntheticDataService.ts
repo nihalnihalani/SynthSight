@@ -41,7 +41,7 @@ export class SyntheticDataService {
    * Parse uploaded file and extract data
    */
   static async parseFile(file: File): Promise<any[]> {
-    console.log('parseFile called with:', file.name, file.size);
+    console.log('SyntheticDataService.parseFile called with:', file.name, file.size);
     
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -378,6 +378,13 @@ export class SyntheticDataService {
       // Parse the response to extract synthetic data
       const syntheticData = this.parseLLMResponse(response.response, request.originalData[0]);
       
+      // If LLM parsing returned empty data, fallback to statistical generation
+      if (!syntheticData || syntheticData.length === 0) {
+        console.log('LLM parsing returned empty data, falling back to statistical generation');
+        return this.generateStatisticalSyntheticData(request);
+      }
+      
+      console.log('LLM generation successful, returning', syntheticData.length, 'records');
       return syntheticData;
     } catch (error) {
       console.error('Error generating synthetic data:', error);
@@ -409,27 +416,64 @@ Model type: ${request.modelType}
 Privacy level: ${request.privacyLevel}
 Record count: ${request.recordCount}
 
-Return the data as a JSON array with the same column structure.`;
+IMPORTANT: Return ONLY a valid JSON array with the same column structure. Do not include any explanatory text, markdown formatting, or code blocks. The response must be parseable JSON.
+
+Example format:
+[
+  {"column1": "value1", "column2": 123, "column3": "category1"},
+  {"column1": "value2", "column2": 456, "column3": "category2"}
+]`;
   }
 
   /**
    * Parse LLM response to extract synthetic data
    */
   private static parseLLMResponse(response: string, sampleRecord: any): any[] {
+    console.log('parseLLMResponse called with response:', response.substring(0, 200) + '...');
+    
     try {
-      // Try to extract JSON from the response
-      const jsonMatch = response.match(/\[[\s\S]*\]/);
+      // Clean the response - remove any markdown formatting
+      let cleanedResponse = response.trim();
+      
+      // Remove markdown code blocks
+      cleanedResponse = cleanedResponse.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+      
+      // Try to extract JSON array from the response
+      const jsonMatch = cleanedResponse.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
+        console.log('Found JSON array match:', jsonMatch[0].substring(0, 100) + '...');
         const data = JSON.parse(jsonMatch[0]);
+        console.log('Successfully parsed JSON array with', data.length, 'items');
         return Array.isArray(data) ? data : [data];
       }
       
+      // Try to find individual JSON objects
+      const objectMatches = cleanedResponse.match(/\{[^{}]*\}/g);
+      if (objectMatches && objectMatches.length > 0) {
+        console.log('Found', objectMatches.length, 'JSON objects');
+        const data = objectMatches.map(match => {
+          try {
+            return JSON.parse(match);
+          } catch (e) {
+            console.warn('Failed to parse object:', match);
+            return null;
+          }
+        }).filter(item => item !== null);
+        
+        if (data.length > 0) {
+          console.log('Successfully parsed', data.length, 'objects');
+          return data;
+        }
+      }
+      
       // Fallback: try to parse the entire response as JSON
-      const data = JSON.parse(response);
+      console.log('Trying to parse entire response as JSON...');
+      const data = JSON.parse(cleanedResponse);
       return Array.isArray(data) ? data : [data];
     } catch (error) {
       console.error('Error parsing LLM response:', error);
-      // Fallback to statistical generation
+      console.log('Response that failed to parse:', response);
+      // Return empty array to trigger statistical fallback
       return [];
     }
   }
@@ -526,6 +570,7 @@ Return the data as a JSON array with the same column structure.`;
       syntheticData.push(syntheticRecord);
     }
     
+    console.log('Statistical generation completed, returning', syntheticData.length, 'records');
     return syntheticData;
   }
 }
