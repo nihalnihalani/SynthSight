@@ -1,0 +1,26 @@
+customer_id,age,income,credit_score,purchase_amount,product_category,payment_method,satisfaction_rating,days_since_last_purchase,is_premium_member
+C001,28,45000,720,1250,Electronics,Credit Card,4,15,true
+C002,35,67000,780,890,Clothing,Debit Card,5,8,true
+C003,22,32000,650,450,Books,PayPal,3,25,false
+C004,41,85000,820,2100,Electronics,Credit Card,5,5,true
+C005,29,52000,710,680,Home & Garden,Credit Card,4,12,false
+C006,33,73000,790,1350,Electronics,Debit Card,4,18,true
+C007,26,38000,680,320,Books,PayPal,3,30,false
+C008,38,92000,850,2800,Electronics,Credit Card,5,3,true
+C009,24,29000,620,280,Clothing,Debit Card,2,35,false
+C010,31,58000,740,950,Home & Garden,Credit Card,4,10,true
+C011,27,42000,700,580,Electronics,PayPal,3,20,false
+C012,36,78000,800,1650,Electronics,Credit Card,5,7,true
+C013,23,35000,660,380,Books,Debit Card,3,28,false
+C014,39,88000,830,2200,Electronics,Credit Card,5,4,true
+C015,30,55000,730,720,Clothing,Credit Card,4,14,false
+C016,25,40000,690,420,Books,PayPal,3,22,false
+C017,34,71000,780,1280,Home & Garden,Credit Card,4,16,true
+C018,28,48000,720,650,Electronics,Debit Card,4,11,false
+C019,32,62000,760,890,Clothing,Credit Card,4,9,true
+C020,26,36000,670,350,Books,Debit Card,3,26,false
+C021,37,82000,810,1950,Electronics,Credit Card,5,6,true
+C022,29,51000,710,680,Home & Garden,Credit Card,4,13,false
+C023,24,33000,640,290,Books,PayPal,2,32,false
+C024,35,69000,790,1420,Electronics,Debit Card,4,17,true
+C025,31,57000,740,780,Clothing,Credit Card,4,8,true

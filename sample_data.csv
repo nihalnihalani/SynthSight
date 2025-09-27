@@ -1,0 +1,21 @@
+name,age,salary,department,years_experience,performance_score,city,education_level
+John Smith,28,65000,Engineering,3,85,New York,Bachelor
+Sarah Johnson,32,72000,Marketing,5,92,Los Angeles,Master
+Mike Brown,25,55000,Sales,2,78,Chicago,Bachelor
+Emily Davis,29,68000,Engineering,4,88,San Francisco,Master
+David Wilson,35,85000,Management,8,95,Seattle,MBA
+Lisa Anderson,27,62000,Marketing,3,82,Boston,Bachelor
+Chris Taylor,31,75000,Engineering,6,90,Austin,Master
+Jessica Martinez,26,58000,Sales,2,75,Miami,Bachelor
+Robert Garcia,33,78000,Management,7,93,Denver,MBA
+Amanda White,30,70000,Marketing,5,87,Portland,Master
+James Lee,24,52000,Sales,1,70,Phoenix,Bachelor
+Michelle Clark,34,82000,Engineering,9,96,Atlanta,PhD
+Daniel Rodriguez,28,66000,Marketing,4,84,Dallas,Bachelor
+Jennifer Thompson,29,69000,Sales,3,81,Las Vegas,Bachelor
+Kevin Moore,32,76000,Management,6,91,Minneapolis,MBA
+Nicole Jackson,27,63000,Engineering,3,86,Detroit,Bachelor
+Andrew Harris,30,71000,Marketing,5,89,Orlando,Master
+Stephanie Lewis,26,59000,Sales,2,77,San Diego,Bachelor
+Ryan Walker,31,74000,Engineering,6,88,Portland,Master
+Rachel Hall,28,65000,Management,4,85,Seattle,Bachelor

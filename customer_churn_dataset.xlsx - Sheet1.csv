@@ -1,0 +1,21 @@
+customer_id,industry,region,monthly_usage,contract_length,support_tickets,last_login,churned
+C001,E-commerce,North America,120,12,2,2025-09-25,No
+C002,Healthcare,Europe,45,6,5,2025-08-15,Yes
+C003,FinTech,Asia-Pacific,210,24,1,2025-09-26,No
+C004,Education,North America,30,3,6,2025-07-02,Yes
+C005,Manufacturing,Europe,150,12,0,2025-09-24,No
+C006,E-commerce,Latin America,60,6,4,2025-08-30,Yes
+C007,Healthcare,Asia-Pacific,90,12,2,2025-09-25,No
+C008,Education,Europe,20,1,7,2025-06-20,Yes
+C009,FinTech,North America,300,24,1,2025-09-26,No
+C010,E-commerce,Asia-Pacific,70,6,3,2025-09-01,Yes
+C011,Manufacturing,North America,110,12,0,2025-09-24,No
+C012,Healthcare,Latin America,35,3,5,2025-08-10,Yes
+C013,Education,Asia-Pacific,50,6,3,2025-09-20,No
+C014,FinTech,Europe,180,12,1,2025-09-25,No
+C015,Manufacturing,Asia-Pacific,25,1,6,2025-07-18,Yes
+C016,E-commerce,North America,250,24,0,2025-09-26,No
+C017,Education,Europe,40,3,4,2025-08-05,Yes
+C018,FinTech,Latin America,195,12,1,2025-09-23,No
+C019,Manufacturing,Europe,80,6,2,2025-09-15,No
+C020,Healthcare,North America,15,1,8,2025-06-10,Yes
